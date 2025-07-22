@@ -54,6 +54,37 @@ public:
 
 LINK_WEAPON_TO_CLASS( weapon_handgrenade, CHandGrenade )
 
+void CHandGrenade::Spawn()
+{
+	Precache();
+	//* JEMBUT: ngaruh ke objek model ketika diambil/dilempar/jatuh
+	//SET_MODEL( ENT( pev ), MyWModel() );
+	SET_MODEL( edict(), "models/v_smokegrenade.mdl");
+
+#if !CLIENT_DLL
+	pev->dmg = gSkillData.plrDmgHandGrenade;
+#endif
+	InitDefaultAmmo(HANDGRENADE_DEFAULT_GIVE);
+	InitMaxClip(WEAPON_NOCLIP);
+
+	FallInit();// get ready to fall down.
+	ALERT(at_console, "\n\tSPAWN GRENADE\n");
+}
+
+void CHandGrenade::Precache( void )
+{
+	PRECACHE_MODEL( MyWModel() );
+	PRECACHE_MODEL( "models/v_grenade.mdl" );
+	PrecachePModel( "models/p_grenade.mdl" );
+
+	PRECACHE_MODEL("models/v_smokegrenade.mdl");
+	PRECACHE_MODEL("models/w_smokegrenade.mdl");
+	PRECACHE_MODEL("models/p_smokegrenade.mdl");
+	PRECACHE_SOUND("weapons/pinpull.wav");
+	PRECACHE_SOUND("weapons/sg_explode.wav");
+	PRECACHE_EVENT(1, "events/createsmoke.sc");
+}
+
 bool CHandGrenade::GetItemInfo( ItemInfo *p )
 {
 	p->iSlot = 4;
@@ -102,6 +133,10 @@ bool CHandGrenade::Deploy()
 {
 	m_flReleaseThrow = -1;
 	return PerformDeploy();
+	// //* JEMBUT: ngaruh ke objek model ketika diambil/dilempar/jatuh
+	// ALERT(at_console, "\n\tGRENADE DEPLOY\n");
+	// return DefaultDeploy( "models/v_smokegrenade.mdl", "models/w_smokegrenade.mdl", HANDGRENADE_DRAW, "crowbar" );
+	// return DefaultDeploy( "models/v_grenade.mdl", "models/p_grenade.mdl", HANDGRENADE_DRAW, "crowbar" );
 }
 
 bool CHandGrenade::CanHolster()

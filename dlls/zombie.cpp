@@ -129,6 +129,8 @@ void CZombie::SetYawSpeed()
 
 TakeDamageResult CZombie::TakeDamage( entvars_t *pevInflictor, entvars_t *pevAttacker, const DamageInfo& damageInfo )
 {
+	ALERT(at_console, "OUCH!!!\n");
+
 	if( damageInfo.type == DMG_BULLET && damageInfo.gibPolicy != GIB_NEVER )
 	{
 		const Vector vecDir = (pev->origin - ( pevInflictor->absmin + pevInflictor->absmax ) * 0.5f).Normalize();
@@ -257,6 +259,7 @@ void CZombie::Spawn()
 {
 	Precache();
 	ZombieSpawnHelper("models/zombie.mdl", gSkillData.zombieHealth);
+	pev->effects |= EF_FULLBRIGHT;
 }
 
 //=========================================================

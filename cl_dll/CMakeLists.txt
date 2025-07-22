@@ -267,3 +267,19 @@ if(CMAKE_BUILD_TYPE MATCHES "Release" AND NOT WIN32)
 			POST_BUILD DEPENDS ${CLDLL_LIBRARY}
 			COMMAND ${CMAKE_STRIP} -s $<TARGET_FILE:${CLDLL_LIBRARY}>)
 endif()
+
+if (WIN32)
+	set(GAME_DLL_OUTPUT_DIR "C:/Program Files (x86)/Steam/steamapps/common/Half-Life/dany_mod/cl_dlls")  
+	add_custom_command(TARGET ${CLDLL_LIBRARY} POST_BUILD
+		COMMAND ${CMAKE_COMMAND} -E copy_if_different
+			"$<TARGET_FILE:${CLDLL_LIBRARY}>"
+			"${GAME_DLL_OUTPUT_DIR}/$<TARGET_FILE_NAME:${CLDLL_LIBRARY}>"
+		COMMENT "Copying client.dll to Half-Life game directory"
+	)
+	add_custom_command(TARGET ${CLDLL_LIBRARY} POST_BUILD
+		COMMAND ${CMAKE_COMMAND} -E copy_if_different
+			"$<TARGET_FILE:${CLDLL_LIBRARY}>"
+			"${GAME_DLL_OUTPUT_DIR}/$<TARGET_FILE_NAME:${CLDLL_LIBRARY}>.pdb"
+		COMMENT "Copying client.pdb to Half-Life game directory"
+	)
+endif()

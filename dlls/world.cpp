@@ -527,6 +527,8 @@ void CWorld::Spawn()
 
 void CWorld::Precache()
 {
+	ALERT(at_console, "ANJAY FROM SERVER 2");
+
 	static bool worldInitAtLeastOnce = false;
 
 	g_pLastSpawn = NULL;
