@@ -52,6 +52,13 @@ const NamedSoundScript CGrenade::bounceSoundScript = {
 const NamedVisual CGrenade::handGrenadeVisual = BuildVisual("HandGrenade.Model")
 		.Model("models/w_grenade.mdl");
 
+// NOTEX: place to set grenade sprite/model
+const NamedVisual CGrenade::redGrenadeVisual = BuildVisual("RedGrenade.Model")
+		.Model("models/w_grenade.mdl");
+
+const NamedVisual CGrenade::purpleGrenadeVisual = BuildVisual("PurpleGrenade.Model")
+		.Model("models/w_smokegrenade.mdl");
+
 const NamedVisual CGrenade::arGrenadeVisual = BuildVisual("ARGrenade.Model")
 		.Model("models/grenade.mdl");
 
@@ -101,6 +108,7 @@ void CGrenade::Explode( TraceResult *pTrace, int bitsDamageType )
 		}
 		else
 		{
+			//* NOTEZ: sprite meledak kepanggil di sini
 			WRITE_SHORT( g_sModelIndexWExplosion );
 		}
 		WRITE_BYTE( FireballDeciScaleFromDamage( damage ) ); // scale * 10
@@ -143,14 +151,77 @@ void CGrenade::Explode( TraceResult *pTrace, int bitsDamageType )
 
 	if( iContents != CONTENTS_WATER )
 	{
+		// NOTEZ: tempat menampilkan spark
+		// NOTEZ: ganti jadi SMOKE
 		int sparkCount = RANDOM_LONG( 0, 3 );
 		for( int i = 0; i < sparkCount; i++ )
 			Create( "spark_shower", pev->origin, pTrace->vecPlaneNormal, NULL );
 	}
 }
 
-void CGrenade::Smoke()
+extern int gmsgBurnedHUD;
+extern int gmsgBlurredHUD;
+
+void CGrenade::Smoke( void )
 {
+	//* NOTEZ: Screen shake
+	if (this->m_eGrenadeType == GRENADE_TYPE::PURPLE_GRENADE)
+	{
+		CBaseEntity* pEntity = NULL;
+		while ((pEntity = UTIL_FindEntityInSphere(pEntity, pev->origin, 300)) != NULL)
+		{
+			if (pEntity->IsPlayer())
+			{
+				CBasePlayer* pPlayer = (CBasePlayer*)pEntity;
+				UTIL_ScreenFade(pEntity, Vector(191, 63, 191), 3.0f, 0.5f, 100, FFADE_IN | FFADE_OUT);
+				//UTIL_ScreenFadeAll(Vector(113, 83, 231), 2.0f, 0.5f, 90, FFADE_IN);
+				UTIL_ScreenShake(pev->origin, 150.0, 150.0, 2.0, 500);
+			}
+		}
+	}
+	else if (this->m_eGrenadeType == GRENADE_TYPE::RED_GRENADE)
+	{
+		CBaseEntity* pEntity = NULL;
+		while ((pEntity = UTIL_FindEntityInSphere(pEntity, pev->origin, 300)) != NULL)
+		{
+			if (pEntity->IsPlayer())
+			{
+				UTIL_ScreenFade(pEntity, Vector(235, 60, 5), 3.0f, 0.5f, 90, FFADE_IN | FFADE_OUT);
+				UTIL_ScreenShake(pev->origin, 500.0, 500.0, 2.0, 500);
+			}
+		}
+	}
+	else if (this->m_eGrenadeType == GRENADE_TYPE::HAND_GRENADE)
+	{
+		CBaseEntity* pEntity = NULL;
+		while ((pEntity = UTIL_FindEntityInSphere(pEntity, pev->origin, 300)) != NULL)
+		{
+			if (pEntity->IsPlayer())
+			{
+				UTIL_ScreenFade(pEntity, Vector(0, 255, 5), 6.0f, 0.5f, 140, FFADE_IN);
+				UTIL_ScreenShake(pev->origin, 500.0, 500.0, 3.5, 500);
+			}
+		}
+	}
+
+	// NOTEX: green grenade
+	// {
+	// 	CBaseEntity *pEntity = NULL;
+	// 	while ((pEntity = UTIL_FindEntityInSphere(pEntity, pev->origin, 500)) != NULL)
+	// 	{
+	// 		if (pEntity->IsPlayer())
+	// 		{
+	// 			UTIL_ScreenFade(pEntity, Vector(0, 202, 114), 6.0f, 0.5f, 190, FFADE_OUT);
+	// 			UTIL_ScreenShake( pev->origin, 1000.0, 500.0, 7.0, 300 );
+	// 		}
+	// 	}
+	// }
+
+	Vector smoke_offset{};
+	smoke_offset.x = 100;
+	smoke_offset.y = 100;
+	smoke_offset.z = 100;
+
 	if( UTIL_PointContents( pev->origin ) == CONTENTS_WATER )
 	{
 		UTIL_Bubbles( pev->origin - Vector( 64, 64, 64 ), pev->origin + Vector( 64, 64, 64 ), 100 );
@@ -159,7 +230,8 @@ void CGrenade::Smoke()
 	{
 		MESSAGE_BEGIN( MSG_PVS, SVC_TEMPENTITY, pev->origin );
 			WRITE_BYTE( TE_SMOKE );
-			WRITE_VECTOR( pev->origin );
+			WRITE_VECTOR( pev->origin + smoke_offset ); // NOTEZ: moving the origin
+			// WRITE_VECTOR( pev->origin );
 			WRITE_SHORT( g_sModelIndexSmoke );
 			WRITE_BYTE( SmokeDeciScaleFromDamage( GetProjectileDamage() ) ); // scale * 10
 			WRITE_BYTE( 12 ); // framerate
@@ -360,7 +432,10 @@ void CGrenade::Spawn()
 	pev->solid = SOLID_BBOX;
 
 	if (m_isTimed)
+	{
 		ApplyVisualWithOwn(GetVisual(handGrenadeVisual));
+		ApplyVisualWithOwn(GetVisual(redGrenadeVisual));
+	}
 	else
 		ApplyVisualWithOwn(GetVisual(arGrenadeVisual));
 	UTIL_SetSize( pev, Vector( 0, 0, 0 ), Vector( 0, 0, 0 ) );
@@ -374,6 +449,7 @@ void CGrenade::Precache()
 	RegisterAndPrecacheSoundScript(bounceSoundScript);
 
 	RegisterVisualAsMineOwn(handGrenadeVisual);
+	RegisterVisualAsMineOwn(redGrenadeVisual);
 	RegisterVisualAsMineOwn(arGrenadeVisual);
 }
 
@@ -394,6 +470,9 @@ void CGrenade::SetProjectileParamsBeforeSpawn(const ProjectileParameters& params
 	else
 	{
 		SetDefaultProjectileDamage(GetSkillValue("plr_hand_grenade"));
+		SetDefaultProjectileDamage(gSkillData.plrDmgHandGrenade);
+		SetDefaultProjectileDamage(gSkillData.plrDmgRedGrenade);
+		SetDefaultProjectileDamage(gSkillData.plrDmgPurpleGrenade);
 	}
 }
 
@@ -453,7 +532,7 @@ CGrenade *CGrenade::ShootContact(CBaseEntity *pOwner, const Vector& vecStart, co
 	return (CGrenade*)CreateAndLaunchAsProjectile(parameters);
 }
 
-CGrenade *CGrenade::ShootTimed( CBaseEntity *pOwner, const Vector& vecStart, const Vector& vecVelocity, float time, EntityOverrides entityOverrides )
+CGrenade *CGrenade::ShootTimed( CBaseEntity *pOwner, const Vector& vecStart, const Vector& vecVelocity, float time, EntityOverrides entityOverrides, GRENADE_TYPE grenade_type )
 {
 	Vector vecDir = vecVelocity;
 	const float speed = vecDir.NormalizeInPlace();
@@ -462,7 +541,9 @@ CGrenade *CGrenade::ShootTimed( CBaseEntity *pOwner, const Vector& vecStart, con
 	ProjectileParameters parameters("grenade", vecStart, vecAng, vecDir, speed, pOwner, entityOverrides);
 	parameters.variant = TIMED;
 	parameters.time = time;
-	return (CGrenade*)CreateAndLaunchAsProjectile(parameters);
+	auto grenade_pev = (CGrenade*)CreateAndLaunchAsProjectile(parameters);
+	grenade_pev->m_eGrenadeType = grenade_type;
+	return grenade_pev;
 }
 
 CGrenade *CGrenade::ShootSatchelCharge( entvars_t *pevOwner, Vector vecStart, Vector vecVelocity )

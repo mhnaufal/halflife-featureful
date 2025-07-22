@@ -856,7 +856,10 @@ void CHud::Init()
 	m_Meter.Init();
 	m_MessageBox.Init();
 
+
 	hudRenderer.Init();
+	m_BurnEffect.Init();
+	m_BlurEffect.Init();
 
 	gEngfuncs.pfnAddCommand("dump_ammo_types_client", ReportRegisteredAmmoTypes);
 	gEngfuncs.pfnAddCommand("get_message", GetTranslatedMessage);
@@ -1236,6 +1239,8 @@ void CHud::LoadWallPuffSprites()
 
 void CHud::VidInit()
 {
+	gEngfuncs.Con_Printf("ANJAY FROM CLIENT");
+
 	static bool vidInitAtLeastOnce = false;
 	if (vidInitAtLeastOnce)
 	{
@@ -1397,9 +1402,10 @@ void CHud::VidInit()
 	m_Caption.VidInit();
 	m_MonsterInfo.VidInit();
 	m_Meter.VidInit();
-	m_MessageBox.VidInit();
 
 	hudRenderer.VidInit();
+	m_BurnEffect.VidInit();
+	m_BlurEffect.VidInit();
 	memset(&fog, 0, sizeof(fog));
 
 	RecacheValues();

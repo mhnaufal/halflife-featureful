@@ -109,6 +109,8 @@ set (SVDLL_SOURCES
 	h_cycler.cpp
 	h_export.cpp
 	handgrenade.cpp
+	red_grenade.cpp
+	purple_grenade.cpp
 	hassassin.cpp
 	headcrab.cpp
 	healthkit.cpp
@@ -192,6 +194,7 @@ set (SVDLL_SOURCES
 	triggers.cpp
 	tripmine.cpp
 	turret.cpp
+	TriggerPrint.cpp
 	uzi.cpp
 	util.cpp
 	vehicle.cpp
@@ -283,4 +286,20 @@ if(CMAKE_BUILD_TYPE MATCHES "Release" AND NOT WIN32)
 	add_custom_command(TARGET ${SVDLL_LIBRARY}
 			POST_BUILD DEPENDS ${SVDLL_LIBRARY}
 			COMMAND ${CMAKE_STRIP} -s $<TARGET_FILE:${SVDLL_LIBRARY}>)
+endif()
+
+if (WIN32)
+	set(GAME_DLL_OUTPUT_DIR "C:/Program Files (x86)/Steam/steamapps/common/Half-Life/dany_mod/dlls")  
+	add_custom_command(TARGET ${SVDLL_LIBRARY} POST_BUILD
+		COMMAND ${CMAKE_COMMAND} -E copy_if_different
+			"$<TARGET_FILE:${SVDLL_LIBRARY}>"
+			"${GAME_DLL_OUTPUT_DIR}/$<TARGET_FILE_NAME:${SVDLL_LIBRARY}>"
+		COMMENT "Copying hl.dll to recon_mod Half-Life game directory"
+	)
+	add_custom_command(TARGET ${SVDLL_LIBRARY} POST_BUILD
+		COMMAND ${CMAKE_COMMAND} -E copy_if_different
+			"$<TARGET_FILE:${SVDLL_LIBRARY}>"
+			"${GAME_DLL_OUTPUT_DIR}/$<TARGET_FILE_NAME:${SVDLL_LIBRARY}>.pdb"
+		COMMENT "Copying hl.pdb to recon_mod Half-Life game directory"
+	)
 endif()

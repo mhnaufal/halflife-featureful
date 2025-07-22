@@ -206,6 +206,8 @@ int gmsgFlashlight = 0;
 int gmsgFlashBattery = 0;
 int gmsgResetHUD = 0;
 int gmsgInitHUD = 0;
+int gmsgBurnedHUD = 0;
+int gmsgBlurredHUD = 0;
 int gmsgSetFog = 0;
 int gmsgKeyedDLight = 0;
 int gmsgShowGameTitle = 0;
@@ -333,6 +335,10 @@ void LinkUserMessages()
 	gmsgWeaponList = REG_USER_MSG( "WeaponList", -1 );
 	gmsgResetHUD = REG_USER_MSG( "ResetHUD", 1 );		// called every respawn
 	gmsgInitHUD = REG_USER_MSG( "InitHUD", 0 );		// called every time a new player joins the server
+	
+	// NOTEZ: how many byte send when using READ_XXX()
+	gmsgBurnedHUD = REG_USER_MSG( "BurnEffect", 8 );
+	gmsgBlurredHUD = REG_USER_MSG( "BlurEffect", 5 );
 
 	gmsgSetFog = REG_USER_MSG("SetFog", 15 );
 	gmsgKeyedDLight = REG_USER_MSG("KeyedDLight", -1 );
@@ -1014,6 +1020,35 @@ TakeDamageResult CBasePlayer::TakeDamage( entvars_t *pevInflictor, entvars_t *pe
 				}
 			}
 		}
+	}
+
+	// NOTEZ: this is inside TakeDamage(), so need to actually taking damage!
+	auto is_grenade_obj = dynamic_cast<CGrenade*>(CBaseEntity::Instance(pevInflictor));
+
+	if (gmsgBurnedHUD > 0 && flDamage > 1.0f && is_grenade_obj->m_eGrenadeType == GRENADE_TYPE::RED_GRENADE)
+    {
+		ALERT(at_console, "[RECON] Fire Burned Grenade post effect\n");
+		long duration = 4.0;
+		long intensity = std::min(flDamage / 50.0f, 1.0f); ;
+        MESSAGE_BEGIN(MSG_ONE, gmsgBurnedHUD, NULL, edict());
+            WRITE_LONG(duration);
+            WRITE_LONG(intensity);
+        MESSAGE_END();
+    }
+
+	if (gmsgBlurredHUD && flDamage > 1.0f && is_grenade_obj->m_eGrenadeType == GRENADE_TYPE::PURPLE_GRENADE)
+	{
+		ALERT(at_console, "[RECON] Purple Hallucination Grenade post effect\n");
+		char activate_blur = '1';
+        MESSAGE_BEGIN(MSG_ONE, gmsgBlurredHUD, NULL, edict());
+            WRITE_CHAR(activate_blur);
+			WRITE_LONG(6.0);
+        MESSAGE_END();
+	}
+
+	if (flDamage > 2.0f && is_grenade_obj->m_eGrenadeType == GRENADE_TYPE::HAND_GRENADE)
+	{
+		ALERT(at_console, "[RECON] Green Grenade\n");
 	}
 
 	return takeDamageResult;

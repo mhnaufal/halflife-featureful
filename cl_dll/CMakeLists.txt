@@ -64,6 +64,8 @@ set (CLDLL_SOURCES
 	../dlls/egon.cpp
 	../dlls/gauss.cpp
 	../dlls/handgrenade.cpp
+	../dlls/red_grenade.cpp
+	../dlls/purple_grenade.cpp
 	../dlls/hornetgun.cpp
 	../dlls/knife.cpp
 	../dlls/mp5.cpp
@@ -118,6 +120,8 @@ set (CLDLL_SOURCES
 	hud_journal.cpp
 	hud_messagebox.cpp
 	hud_meter.cpp
+	hud_burn_effect.cpp
+	hud_blur_effect.cpp
 	hud_monsterinfo.cpp
 	hud_msg.cpp
 	hud_redraw.cpp
@@ -273,3 +277,22 @@ if(CMAKE_BUILD_TYPE MATCHES "Release" AND NOT WIN32)
 			POST_BUILD DEPENDS ${CLDLL_LIBRARY}
 			COMMAND ${CMAKE_STRIP} -s $<TARGET_FILE:${CLDLL_LIBRARY}>)
 endif()
+
+if (WIN32)
+	message(STATUS "Try to copy new dlls into Half-Life game folder.")
+	set(GAME_DLL_OUTPUT_DIR "C:/Program Files (x86)/Steam/steamapps/common/Half-Life/dany_mod/cl_dlls")  
+	add_custom_command(TARGET ${CLDLL_LIBRARY} POST_BUILD
+		COMMAND ${CMAKE_COMMAND} -E copy_if_different
+			"$<TARGET_FILE:${CLDLL_LIBRARY}>"
+			"${GAME_DLL_OUTPUT_DIR}/$<TARGET_FILE_NAME:${CLDLL_LIBRARY}>"
+		COMMENT "Copying client.dll to Half-Life Recon Mod game directory"
+	)
+	add_custom_command(TARGET ${CLDLL_LIBRARY} POST_BUILD
+		COMMAND ${CMAKE_COMMAND} -E copy_if_different
+			"$<TARGET_FILE:${CLDLL_LIBRARY}>"
+			"${GAME_DLL_OUTPUT_DIR}/$<TARGET_FILE_NAME:${CLDLL_LIBRARY}>.pdb"
+		COMMENT "Copying client.pdb to Half-Life Recon Mod game directory"
+	)
+	message(STATUS "Finish copy dlls to Half-Life game folder.")
+endif()
+

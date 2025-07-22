@@ -51,5 +51,7 @@
 #define WEAPON_RADIO			61
 
 #define WEAPON_TOOL				63
+#define WEAPON_RED_GRENADE		63
+#define WEAPON_PURPLE_GRENADE	64
 
 #endif

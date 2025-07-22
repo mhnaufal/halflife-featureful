@@ -760,6 +760,67 @@ private:
 //
 //-----------------------------------------------------
 //
+
+class CBlurTexture
+{
+public:
+	CBlurTexture() = default;
+	void Init(int width, int height);
+	void BindTexture(int width, int height);
+	void DrawQuad(int width, int height);
+	void Draw(int width, int height);
+
+	unsigned int m_uiTexture{};
+	float m_fAlpha{}, m_fRed{}, m_fGreen{}, m_fBlue{};
+};
+
+class CBlurEffect : public CHudBase
+{
+public:
+	int Init(void);
+	int VidInit(void);
+	int Draw(float flTime);
+	void Reset(void);
+
+	int MsgFunc_BlurEffect(const char* pszName, int iSize, void* pbuf);
+	void ShowEffect(bool activate, long duration);
+	bool AnimateNextFrame(int desiredFrameRate);
+
+	int m_iBlurPos{};
+	CBlurTexture m_pTextures[10]; // NOTEX: MAX_MOTIONBLUR_FRAME
+	int m_iFrameCounter{};
+	float m_fNextFrameUpdates{};
+
+	bool m_bIsBlurActive = false;
+	float m_flEffectEnd{};
+};
+
+class CHudBurnEffect : public CHudBase
+{
+public:
+    int Init(void);
+    int VidInit(void);
+    int Draw(float flTime);
+    void Reset(void);
+
+    int MsgFunc_BurnEffect(const char *pszName, int iSize, void *pbuf);
+    void ShowEffect(long duration, long intensity);
+
+private:
+    HSPRITE m_hSprite;
+    wrect_t m_rcSprite;
+
+    long m_flEffectEnd;
+    long m_flIntensity;
+
+	int m_iTotalFrame;
+	float m_fCurrentFrame;
+	float m_fFrameRate;
+};
+
+//
+//-----------------------------------------------------
+//
 #define MAX_SPRITE_NAME_LENGTH	24
 
 struct inventory_t
@@ -1250,6 +1311,8 @@ public:
 	CHudMonsterInfo		m_MonsterInfo;
 	CHudMeter	m_Meter;
 	CHudMessageBox	m_MessageBox;
+	CHudBurnEffect m_BurnEffect;
+	CBlurEffect m_BlurEffect;
 
 	void ParseModConfigs();
 	bool IsDeveloperModeOn();

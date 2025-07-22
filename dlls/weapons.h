@@ -45,6 +45,8 @@ void DeactivateSatchels( CBasePlayer *pOwner );
 #define BOLT_MAX_CARRY			50
 #define ROCKET_MAX_CARRY		5
 #define HANDGRENADE_MAX_CARRY	10
+#define RED_GRENADE_MAX_CARRY	5
+#define PURPLE_GRENADE_MAX_CARRY	5
 #define SATCHEL_MAX_CARRY		5
 #define TRIPMINE_MAX_CARRY		5
 #define SNARK_MAX_CARRY			15
