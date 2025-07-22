@@ -1231,6 +1231,8 @@ void CHud::LoadWallPuffSprites()
 
 void CHud::VidInit()
 {
+	gEngfuncs.Con_Printf("ANJAY FROM CLIENT");
+
 	static bool vidInitAtLeastOnce = false;
 	if (vidInitAtLeastOnce)
 	{

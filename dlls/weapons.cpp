@@ -39,12 +39,14 @@
 
 extern bool gEvilImpulse101;
 
+//* JEMBUT: tempat ngganti global sprite/model
 DLL_GLOBAL	short g_sModelIndexLaser;// holds the index for the laser beam
 DLL_GLOBAL	const char *g_pModelNameLaser = "sprites/laserbeam.spr";
 DLL_GLOBAL	short g_sModelIndexLaserDot;// holds the index for the laser beam dot
 DLL_GLOBAL	short g_sModelIndexFireball;// holds the index for the fireball
 DLL_GLOBAL	short g_sModelIndexSmoke;// holds the index for the smoke cloud
 DLL_GLOBAL	const char* g_pModelNameSmoke = "sprites/steam1.spr";
+//DLL_GLOBAL	const char* g_pModelNameSmoke = "sprites/stmbal1.spr";
 DLL_GLOBAL	short g_sModelIndexWExplosion;// holds the index for the underwater explosion
 DLL_GLOBAL	short g_sModelIndexBubbles;// holds the index for the bubbles model
 DLL_GLOBAL	short g_sModelIndexBloodDrop;// holds the sprite index for the initial blood

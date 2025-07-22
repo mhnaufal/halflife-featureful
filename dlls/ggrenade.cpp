@@ -100,6 +100,7 @@ void CGrenade::Explode( TraceResult *pTrace, int bitsDamageType )
 		}
 		else
 		{
+			//* JEMBUT: sprite meledak kepanggil di sini
 			WRITE_SHORT( g_sModelIndexWExplosion );
 		}
 		WRITE_BYTE( FireballDeciScaleFromDamage( damage ) ); // scale * 10
