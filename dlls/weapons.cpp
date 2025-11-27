@@ -46,7 +46,7 @@ DLL_GLOBAL	short g_sModelIndexLaserDot;// holds the index for the laser beam dot
 DLL_GLOBAL	short g_sModelIndexFireball;// holds the index for the fireball
 DLL_GLOBAL	short g_sModelIndexSmoke;// holds the index for the smoke cloud
 DLL_GLOBAL	const char* g_pModelNameSmoke = "sprites/steam1.spr";
-//DLL_GLOBAL	const char* g_pModelNameSmoke = "sprites/stmbal1.spr";
+//DLL_GLOBAL	const char* g_pModelNameSmoke = "sprites/redflare2.spr"; // BERAK: purple grenade
 DLL_GLOBAL	short g_sModelIndexWExplosion;// holds the index for the underwater explosion
 DLL_GLOBAL	short g_sModelIndexBubbles;// holds the index for the bubbles model
 DLL_GLOBAL	short g_sModelIndexBloodDrop;// holds the sprite index for the initial blood
@@ -434,9 +434,16 @@ void W_Precache( CBaseEntity* pWorld )
 		}
 	}
 
+	//* JEMBUT: sprite atau model bisa di precache di sini
+	//* JEMBUT: ganti model explosion di sini
 	g_sModelIndexFireball = PRECACHE_MODEL( "sprites/zerogxplode.spr" );// fireball
+	//g_sModelIndexFireball = PRECACHE_MODEL( "sprites/poison.spr" );// BERAK: purple grenade
+	//g_sModelIndexFireball = PRECACHE_MODEL( "sprites/redflare1.spr" );// BERAK: green grenade
+	//g_sModelIndexFireball = PRECACHE_MODEL( "sprites/glow01.spr" );// BERAK: red grenade
 	g_sModelIndexWExplosion = PRECACHE_MODEL( "sprites/WXplo1.spr" );// underwater fireball
 	g_sModelIndexSmoke = PRECACHE_MODEL( g_pModelNameSmoke );// smoke
+	//g_sModelIndexSmoke = PRECACHE_MODEL( "sprites/dexplo.spr" );// BERAK: green
+	//g_sModelIndexSmoke = PRECACHE_MODEL( "sprites/portal1.spr" );// BERAK: red grenade
 	g_sModelIndexBubbles = PRECACHE_MODEL( "sprites/bubble.spr" );//bubbles
 	g_sModelIndexBloodSpray = PRECACHE_MODEL( "sprites/bloodspray.spr" ); // initial blood
 	g_sModelIndexBloodDrop = PRECACHE_MODEL( "sprites/blood.spr" ); // splattered blood 

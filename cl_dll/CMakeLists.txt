@@ -284,3 +284,4 @@ if (WIN32)
 		COMMENT "Copying client.pdb to Half-Life game directory"
 	)
 endif()
+

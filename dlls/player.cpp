@@ -202,6 +202,7 @@ int gmsgFlashlight = 0;
 int gmsgFlashBattery = 0;
 int gmsgResetHUD = 0;
 int gmsgInitHUD = 0;
+int gmsgFireHUD = 0;
 int gmsgSetFog = 0;
 int gmsgKeyedDLight = 0;
 int gmsgShowGameTitle = 0;
@@ -326,6 +327,7 @@ void LinkUserMessages()
 	gmsgWeaponList = REG_USER_MSG( "WeaponList", -1 );
 	gmsgResetHUD = REG_USER_MSG( "ResetHUD", 1 );		// called every respawn
 	gmsgInitHUD = REG_USER_MSG( "InitHUD", 0 );		// called every time a new player joins the server
+	gmsgFireHUD = REG_USER_MSG( "FireEffect", -1 );		// called every time a new player joins the server
 
 	gmsgSetFog = REG_USER_MSG("SetFog", 15 );
 	gmsgKeyedDLight = REG_USER_MSG("KeyedDLight", -1 );
@@ -1002,6 +1004,17 @@ TakeDamageResult CBasePlayer::TakeDamage( entvars_t *pevInflictor, entvars_t *pe
 			}
 		}
 	}
+
+	if (gmsgFireHUD > 0) // Safety check
+    {
+		ALERT(at_console, "ASU A\n");
+		long duration = 5.0;
+		long intensity = 95.0;
+        MESSAGE_BEGIN(MSG_ONE, gmsgFireHUD, NULL, edict());
+            WRITE_LONG(duration);
+            WRITE_LONG(intensity);
+        MESSAGE_END();
+    }
 
 	return takeDamageResult;
 }
@@ -2781,6 +2794,19 @@ void CBasePlayer::PreThink()
 
 	ItemPreFrame();
 	WaterMove();
+
+	//// JEMBUT:
+	//{
+	//	m_vecPunchVelocity *= 0.9f;
+	//	// Add punch velocity to the current view punch offset
+	//	m_vecViewPunch += m_vecPunchVelocity * gpGlobals->frametime;
+	//	// Apply it to the player's view angles
+	//	pev->v_angle.x += m_vecViewPunch.x;
+	//	pev->v_angle.y += m_vecViewPunch.y;
+	//	// Gradually damp the view punch too
+	//	m_vecViewPunch *= 0.9f;
+	//	//ALERT(at_console, "\n\t\tPLAYER BERGERAK\n\n");
+	//}
 
 	if( g_pGameRules && g_pGameRules->FAllowFlashlight() )
 		m_iHideHUD &= ~HIDEHUD_FLASHLIGHT;

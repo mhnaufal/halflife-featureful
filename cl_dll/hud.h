@@ -750,6 +750,29 @@ private:
 //
 //-----------------------------------------------------
 //
+
+class CHudFireEffect : public CHudBase
+{
+	public:
+    int Init(void);
+    int VidInit(void);
+    int Draw(float flTime);
+    void Reset(void);
+    
+    int MsgFunc_FireEffect(const char *pszName, int iSize, void *pbuf);
+    void ShowEffect(long duration, long intensity);
+    
+private:
+    HSPRITE m_hSprite;
+    wrect_t m_rcSprite;
+    long m_flEffectEnd;
+    long m_flIntensity;
+	float m_flScale;
+};
+
+//
+//-----------------------------------------------------
+//
 #define MAX_SPRITE_NAME_LENGTH	24
 
 struct inventory_t
@@ -1205,6 +1228,8 @@ public:
 	CHudCaption		m_Caption;
 	CHudMonsterInfo		m_MonsterInfo;
 	CHudMeter	m_Meter;
+	CHudSpeedometer	m_Speedometer;
+	CHudFireEffect m_FireEffect;
 
 	void ParseModConfigs();
 	bool IsDeveloperModeOn();
