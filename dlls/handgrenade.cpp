@@ -54,6 +54,7 @@ public:
 
 LINK_WEAPON_TO_CLASS( weapon_handgrenade, CHandGrenade )
 
+/*
 void CHandGrenade::Spawn()
 {
 	Precache();
@@ -64,8 +65,8 @@ void CHandGrenade::Spawn()
 #if !CLIENT_DLL
 	pev->dmg = gSkillData.plrDmgHandGrenade;
 #endif
-	InitDefaultAmmo(HANDGRENADE_DEFAULT_GIVE);
-	InitMaxClip(WEAPON_NOCLIP);
+	//InitDefaultAmmo(5);
+	InitMaxClip();
 
 	FallInit();// get ready to fall down.
 	ALERT(at_console, "\n\tSPAWN GRENADE\n");
@@ -73,7 +74,7 @@ void CHandGrenade::Spawn()
 
 void CHandGrenade::Precache( void )
 {
-	PRECACHE_MODEL( MyWModel() );
+	//PRECACHE_MODEL( MyWModel() );
 	PRECACHE_MODEL( "models/v_grenade.mdl" );
 	PrecachePModel( "models/p_grenade.mdl" );
 
@@ -84,6 +85,7 @@ void CHandGrenade::Precache( void )
 	PRECACHE_SOUND("weapons/sg_explode.wav");
 	PRECACHE_EVENT(1, "events/createsmoke.sc");
 }
+*/
 
 bool CHandGrenade::GetItemInfo( ItemInfo *p )
 {
@@ -179,6 +181,13 @@ void CHandGrenade::PrimaryAttack()
 		SendWeaponAnim( HANDGRENADE_PINPULL );
 		m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 0.5f;
 	}
+	//// JEMBUT: camera shake
+	//{
+	//	//ALERT(at_console, "\n\tGRENADE DEPLOYED);
+	//	float amplitude = 15.0f;
+	//	m_pPlayer->m_vecPunchVelocity.x += RANDOM_FLOAT(-amplitude, amplitude);
+	//	m_pPlayer->m_vecPunchVelocity.y += RANDOM_FLOAT(-amplitude, amplitude);
+	//}
 }
 
 bool CHandGrenade::PreferNewPhysics()
