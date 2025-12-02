@@ -101,7 +101,7 @@ void CGrenade::Explode( TraceResult *pTrace, int bitsDamageType )
 		}
 		else
 		{
-			//* JEMBUT: sprite meledak kepanggil di sini
+			//* NOTEZ: sprite meledak kepanggil di sini
 			WRITE_SHORT( g_sModelIndexWExplosion );
 		}
 		WRITE_BYTE( FireballDeciScaleFromDamage( damage ) ); // scale * 10
@@ -144,8 +144,8 @@ void CGrenade::Explode( TraceResult *pTrace, int bitsDamageType )
 
 	if( iContents != CONTENTS_WATER )
 	{
-		// JEMBUT: tempat menampilkan spark
-		// TODO: ganti jadi SMOKE
+		// NOTEZ: tempat menampilkan spark
+		// NOTEZ: ganti jadi SMOKE
 		int sparkCount = RANDOM_LONG( 0, 3 );
 		for( int i = 0; i < sparkCount; i++ )
 			Create( "spark_shower", pev->origin, pTrace->vecPlaneNormal, NULL );
@@ -156,23 +156,22 @@ extern int gmsgFireHUD;
 
 void CGrenade::Smoke( void )
 {
-	//* JEMBUT: Screen shake
-	// BERAK: purple grenade
-	// BERAK: shake only this grenade type
-	//{
-	//	CBaseEntity *pEntity = NULL;
-	//	while ((pEntity = UTIL_FindEntityInSphere(pEntity, pev->origin, 500)) != NULL)
-	//	{
-	//		if (pEntity->IsPlayer())
-	//		{
-	//			//CBasePlayer* pPlayer = (CBasePlayer*)pEntity;
-	//			UTIL_ScreenFade(pEntity, Vector(128, 0, 255), 5.0f, 1.5f, 200, FFADE_IN | FFADE_MODULATE);
-	//			UTIL_ScreenShake( pev->origin, 12.0, 180.0, 5.5, 500 );
-	//		}
-	//	}
-	//}
+	//* NOTEZ: Screen shake
+	// NOTEX: purple grenade
+	{
+		CBaseEntity *pEntity = NULL;
+		while ((pEntity = UTIL_FindEntityInSphere(pEntity, pev->origin, 500)) != NULL)
+		{
+			if (pEntity->IsPlayer())
+			{
+				//CBasePlayer* pPlayer = (CBasePlayer*)pEntity;
+				UTIL_ScreenFade(pEntity, Vector(180, 10, 10), 6.0f, 1.5f, 50, FFADE_IN | FFADE_MODULATE);
+				UTIL_ScreenShake( pev->origin, 500.0, 500.0, 6.0, 100 );
+			}
+		}
+	}
 
-	// BERAK: green grenade
+	// NOTEX: green grenade
 	{
 		//CBaseEntity *pEntity = NULL;
 		//while ((pEntity = UTIL_FindEntityInSphere(pEntity, pev->origin, 500)) != NULL)
@@ -185,38 +184,22 @@ void CGrenade::Smoke( void )
 		//}
 	}
 
-	// BERAK: fire/red grenade
-	//{
-	//	CBaseEntity *pEntity = NULL;
-	//	while ((pEntity = UTIL_FindEntityInSphere(pEntity, pev->origin, 500)) != NULL)
-	//	{
-	//		if (pEntity->IsPlayer())
-	//		{
-	//			//UTIL_ScreenFade(pEntity, Vector(235, 70, 0), 6.0f, 2.0f, 140, FFADE_MODULATE);
-	//			//UTIL_ScreenShake( pev->origin, 500.0, 500.0, 6.0, 500 );
-	//			//UTIL_ScreenFadeAll(Vector(200, 50, 50), 50.0f, 1.0f, 200, FFADE_IN);
-
-	//			{
-	//				//ALERT(at_console, "\nDANCOKKK\n");
-	//				//long duration = 15.0;
-	//				//long intensity = 15.0;
-
-	//				//MESSAGE_BEGIN( MSG_ONE, gmsgFireHUD, pev->origin );
-	//				//MESSAGE_BEGIN( MSG_ONE, gmsgFireHUD, NULL, ENT(pev) );
-	//				//ALERT(at_console, "\nDANCOKKK\n");
-	//				//	WRITE_LONG(duration);
-	//				//ALERT(at_console, "\nDANCOKKK\n");
-	//				//	WRITE_LONG(intensity);
-	//				//ALERT(at_console, "\nDANCOKKK\n");
-	//				//MESSAGE_END();
-	//				//ALERT(at_console, "\nDANCOKKK 2\n");
-	//			}
-	//		}
-	//	}
-	//}
+	// NOTEX: fire/red grenade
+	// {
+	// 	CBaseEntity *pEntity = NULL;
+	// 	while ((pEntity = UTIL_FindEntityInSphere(pEntity, pev->origin, 500)) != NULL)
+	// 	{
+	// 		if (pEntity->IsPlayer())
+	// 		{
+	// 			UTIL_ScreenFade(pEntity, Vector(235, 70, 0), 6.0f, 2.0f, 140, FFADE_MODULATE);
+	// 			UTIL_ScreenShake( pev->origin, 500.0, 500.0, 6.0, 500 );
+	// 			UTIL_ScreenFadeAll(Vector(200, 50, 50), 50.0f, 1.0f, 200, FFADE_IN);
+	// 		}
+	// 	}
+	// }
 
 	Vector a{};
-	a.x = 50;
+	a.x = 100;
 	a.y = 100;
 	a.z = 100;
 
@@ -228,7 +211,7 @@ void CGrenade::Smoke( void )
 	{
 		MESSAGE_BEGIN( MSG_PVS, SVC_TEMPENTITY, pev->origin );
 			WRITE_BYTE( TE_SMOKE );
-			WRITE_VECTOR( pev->origin + a ); // JEMBUT: moving the origin
+			WRITE_VECTOR( pev->origin + a ); // NOTEZ: moving the origin
 			WRITE_SHORT( g_sModelIndexSmoke );
 			WRITE_BYTE( SmokeDeciScaleFromDamage( GetProjectileDamage() ) ); // scale * 10
 			WRITE_BYTE( 12 ); // framerate

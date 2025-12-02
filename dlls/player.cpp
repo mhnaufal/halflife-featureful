@@ -320,7 +320,7 @@ void LinkUserMessages()
 	gmsgWeaponList = REG_USER_MSG( "WeaponList", -1 );
 	gmsgResetHUD = REG_USER_MSG( "ResetHUD", 1 );		// called every respawn
 	gmsgInitHUD = REG_USER_MSG( "InitHUD", 0 );		// called every time a new player joins the server
-	gmsgFireHUD = REG_USER_MSG( "FireEffect", -1 );		// called every time a new player joins the server
+	gmsgFireHUD = REG_USER_MSG( "BurnEffect", 8 );		// called every time a new player joins the server
 
 	gmsgSetFog = REG_USER_MSG("SetFog", 15 );
 	gmsgKeyedDLight = REG_USER_MSG("KeyedDLight", -1 );
@@ -998,11 +998,12 @@ TakeDamageResult CBasePlayer::TakeDamage( entvars_t *pevInflictor, entvars_t *pe
 		}
 	}
 
-	if (gmsgFireHUD > 0) // Safety check
+	// NOTEZ: this is inside TakeDamage(), so need to actually taking damage!
+	if (gmsgFireHUD > 0 && flDamage > 3.0f)
     {
-		ALERT(at_console, "ASU A\n");
-		long duration = 5.0;
-		long intensity = 95.0;
+		ALERT(at_console, "CEK3: create custom HUD smoke effect\n\n");
+		long duration = 3.0;
+		long intensity = std::min(flDamage / 50.0f, 1.0f); ;
         MESSAGE_BEGIN(MSG_ONE, gmsgFireHUD, NULL, edict());
             WRITE_LONG(duration);
             WRITE_LONG(intensity);
@@ -2718,7 +2719,7 @@ void CBasePlayer::PreThink()
 	ItemPreFrame();
 	WaterMove();
 
-	//// JEMBUT:
+	//// NOTEZ:
 	//{
 	//	m_vecPunchVelocity *= 0.9f;
 	//	// Add punch velocity to the current view punch offset

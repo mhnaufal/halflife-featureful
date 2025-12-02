@@ -850,10 +850,9 @@ void CHud::Init()
 	m_Caption.Init();
 	m_MonsterInfo.Init();
 	m_Meter.Init();
-	m_Speedometer.Init();
-	m_FireEffect.Init();
 
 	hudRenderer.Init();
+	m_BurnEffect.Init();
 
 	gEngfuncs.pfnAddCommand("dump_ammo_types_client", ReportRegisteredAmmoTypes);
 	gEngfuncs.pfnAddCommand("get_message", GetTranslatedMessage);
@@ -1406,10 +1405,9 @@ void CHud::VidInit()
 	m_Caption.VidInit();
 	m_MonsterInfo.VidInit();
 	m_Meter.VidInit();
-	m_Speedometer.VidInit();
-	m_FireEffect.VidInit();
 
 	hudRenderer.VidInit();
+	m_BurnEffect.VidInit();
 	memset(&fog, 0, sizeof(fog));
 
 	RecacheValues();

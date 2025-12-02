@@ -58,7 +58,7 @@ LINK_WEAPON_TO_CLASS( weapon_handgrenade, CHandGrenade )
 void CHandGrenade::Spawn()
 {
 	Precache();
-	//* JEMBUT: ngaruh ke objek model ketika diambil/dilempar/jatuh
+	//* NOTEZ: ngaruh ke objek model ketika diambil/dilempar/jatuh
 	//SET_MODEL( ENT( pev ), MyWModel() );
 	SET_MODEL( edict(), "models/v_smokegrenade.mdl");
 
@@ -135,7 +135,7 @@ bool CHandGrenade::Deploy()
 {
 	m_flReleaseThrow = -1;
 	return PerformDeploy();
-	// //* JEMBUT: ngaruh ke objek model ketika diambil/dilempar/jatuh
+	// //* NOTEZ: ngaruh ke objek model ketika diambil/dilempar/jatuh
 	// ALERT(at_console, "\n\tGRENADE DEPLOY\n");
 	// return DefaultDeploy( "models/v_smokegrenade.mdl", "models/w_smokegrenade.mdl", HANDGRENADE_DRAW, "crowbar" );
 	// return DefaultDeploy( "models/v_grenade.mdl", "models/p_grenade.mdl", HANDGRENADE_DRAW, "crowbar" );
@@ -181,13 +181,6 @@ void CHandGrenade::PrimaryAttack()
 		SendWeaponAnim( HANDGRENADE_PINPULL );
 		m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 0.5f;
 	}
-	//// JEMBUT: camera shake
-	//{
-	//	//ALERT(at_console, "\n\tGRENADE DEPLOYED);
-	//	float amplitude = 15.0f;
-	//	m_pPlayer->m_vecPunchVelocity.x += RANDOM_FLOAT(-amplitude, amplitude);
-	//	m_pPlayer->m_vecPunchVelocity.y += RANDOM_FLOAT(-amplitude, amplitude);
-	//}
 }
 
 bool CHandGrenade::PreferNewPhysics()
