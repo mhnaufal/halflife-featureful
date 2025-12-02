@@ -751,23 +751,25 @@ private:
 //-----------------------------------------------------
 //
 
-class CHudFireEffect : public CHudBase
+class CHudBurnEffect : public CHudBase
 {
-	public:
+public:
     int Init(void);
     int VidInit(void);
     int Draw(float flTime);
     void Reset(void);
-    
-    int MsgFunc_FireEffect(const char *pszName, int iSize, void *pbuf);
+
+    int MsgFunc_BurnEffect(const char *pszName, int iSize, void *pbuf);
     void ShowEffect(long duration, long intensity);
-    
+
 private:
     HSPRITE m_hSprite;
     wrect_t m_rcSprite;
     long m_flEffectEnd;
     long m_flIntensity;
-	float m_flScale;
+	int m_iTotalFrame;
+	float m_fCurrentFrame;
+	float m_fFrameRate;
 };
 
 //
@@ -1228,8 +1230,7 @@ public:
 	CHudCaption		m_Caption;
 	CHudMonsterInfo		m_MonsterInfo;
 	CHudMeter	m_Meter;
-	CHudSpeedometer	m_Speedometer;
-	CHudFireEffect m_FireEffect;
+	CHudBurnEffect m_BurnEffect;
 
 	void ParseModConfigs();
 	bool IsDeveloperModeOn();

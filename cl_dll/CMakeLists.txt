@@ -114,6 +114,7 @@ set (CLDLL_SOURCES
 	hud_error_collection.cpp
 	hud_journal.cpp
 	hud_meter.cpp
+	hud_burn_effect.cpp
 	hud_monsterinfo.cpp
 	hud_msg.cpp
 	hud_redraw.cpp
@@ -270,6 +271,7 @@ if(CMAKE_BUILD_TYPE MATCHES "Release" AND NOT WIN32)
 endif()
 
 if (WIN32)
+	message(STATUS "Try to copy new dlls into Half-Life game folder.")
 	set(GAME_DLL_OUTPUT_DIR "C:/Program Files (x86)/Steam/steamapps/common/Half-Life/dany_mod/cl_dlls")  
 	add_custom_command(TARGET ${CLDLL_LIBRARY} POST_BUILD
 		COMMAND ${CMAKE_COMMAND} -E copy_if_different
@@ -283,5 +285,6 @@ if (WIN32)
 			"${GAME_DLL_OUTPUT_DIR}/$<TARGET_FILE_NAME:${CLDLL_LIBRARY}>.pdb"
 		COMMENT "Copying client.pdb to Half-Life game directory"
 	)
+	message(STATUS "Finish copy dlls to Half-Life game folder.")
 endif()
 
