@@ -1001,13 +1001,13 @@ TakeDamageResult CBasePlayer::TakeDamage( entvars_t *pevInflictor, entvars_t *pe
 	// NOTEZ: this is inside TakeDamage(), so need to actually taking damage!
 	if (gmsgFireHUD > 0 && flDamage > 3.0f)
     {
-		ALERT(at_console, "CEK3: create custom HUD smoke effect\n\n");
-		long duration = 3.0;
-		long intensity = std::min(flDamage / 50.0f, 1.0f); ;
-        MESSAGE_BEGIN(MSG_ONE, gmsgFireHUD, NULL, edict());
-            WRITE_LONG(duration);
-            WRITE_LONG(intensity);
-        MESSAGE_END();
+		//ALERT(at_console, "CEK3: create custom HUD smoke effect\n\n");
+		//long duration = 3.0;
+		//long intensity = std::min(flDamage / 50.0f, 1.0f); ;
+  //      MESSAGE_BEGIN(MSG_ONE, gmsgFireHUD, NULL, edict());
+  //          WRITE_LONG(duration);
+  //          WRITE_LONG(intensity);
+  //      MESSAGE_END();
     }
 
 	return takeDamageResult;

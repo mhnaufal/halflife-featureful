@@ -114,6 +114,7 @@ set (CLDLL_SOURCES
 	hud_journal.cpp
 	hud_meter.cpp
 	hud_burn_effect.cpp
+	hud_blur_effect.cpp
 	hud_monsterinfo.cpp
 	hud_msg.cpp
 	hud_redraw.cpp
