@@ -3,6 +3,7 @@
 #include "hud.h"
 #include "cl_util.h"
 #include "parsemsg.h"
+#include "triangleapi.h"
 
 DECLARE_MESSAGE(m_BurnEffect, BurnEffect)
 
@@ -14,21 +15,20 @@ int CHudBurnEffect::Init(void)
 	m_flEffectEnd = 0;
 	m_flIntensity = 0;
 	m_iFlags = 0;
-	m_iTotalFrame = 9;
-	m_fCurrentFrame = 0;
-	m_fFrameRate = 9;
+	m_iTotalFrame = 8;
+	m_fCurrentFrame = 0.0f;
+	m_fFrameRate = 8.0f;
 
 	return 1;
 }
 
 int CHudBurnEffect::VidInit(void)
 {
-	//m_hSprite = SPR_Load("sprites/custom/asep.spr");
 	m_hSprite = SPR_Load("sprites/custom/burned_effect.spr");
+	//m_hBlurSprite = SPR_Load("sprites/white.spr");
 
 	if (m_hSprite)
 	{
-		//ConsolePrint("CEK3: Smoke Sprite Exists!\n");
 		m_rcSprite.left = 0;
 		m_rcSprite.top = 0;
 		m_rcSprite.right = SPR_Width(m_hSprite, 0);
@@ -43,9 +43,9 @@ void CHudBurnEffect::Reset(void)
 	m_flEffectEnd = 0;
 	m_flIntensity = 0;
 	m_iFlags = 0;
-	m_iTotalFrame = 9;
-	m_fCurrentFrame = 0;
-	m_fFrameRate = 9;
+	m_iTotalFrame = 8;
+	m_fCurrentFrame = 0.0f;
+	m_fFrameRate = 8.0f;
 }
 
 int CHudBurnEffect::Draw(float flTime)
@@ -58,14 +58,15 @@ int CHudBurnEffect::Draw(float flTime)
 
 		// Animate
 		float deltaTime = gHUD.m_flTimeDelta;
-		m_fCurrentFrame = m_fCurrentFrame + (m_fFrameRate * deltaTime);
+		m_fCurrentFrame += m_fFrameRate * deltaTime;
 
-		// Loop animation or clamp to last frame
-		int currentFrame = (int)m_fCurrentFrame % m_iTotalFrame; // Loop
-		// int currentFrame = min((int)m_fCurrentFrame, m_iTotalFrame - 1); // Play once
+		// Loop animation
+		int currentFrame = (int)m_fCurrentFrame % m_iTotalFrame;
+		//// Play once
+		//// int currentFrame = min((int)m_fCurrentFrame, m_iTotalFrame - 1);
 
-		// Scale factor - increase this to make sprite bigger
-		float scale = 1.0f; // 2x bigger, adjust as needed
+		// Scale factor
+		float scale = 1.0f;
 
 		// Calculate scaled dimensions
 		int scaledWidth = (int)(m_rcSprite.right * scale);
@@ -82,25 +83,27 @@ int CHudBurnEffect::Draw(float flTime)
 		scaledRect.top = 0;
 		scaledRect.right = scaledWidth;
 		scaledRect.bottom = scaledHeight;
-		SPR_Set(m_hSprite, (int)(255 * alpha), (int)(255 * alpha), (int)(255 * alpha));
-		SPR_DrawAdditive(m_fCurrentFrame, 0, y, &scaledRect);
 
-		SPR_Set(m_hSprite, (int)(255 * alpha), (int)(255 * alpha), (int)(255 * alpha));
-		SPR_DrawAdditive(m_fCurrentFrame, m_rcSprite.right, y, &scaledRect);
+		if (currentFrame <= m_iTotalFrame)
+		{
+			SPR_Set(m_hSprite, (int)(255 * alpha), (int)(255 * alpha), (int)(255 * alpha));
+			SPR_DrawAdditive(currentFrame, 0, y, &scaledRect);
 
-		SPR_Set(m_hSprite, (int)(255 * alpha), (int)(255 * alpha), (int)(255 * alpha));
-		SPR_DrawAdditive(m_fCurrentFrame, m_rcSprite.right * 2, y, &scaledRect);
+			SPR_Set(m_hSprite, (int)(255 * alpha), (int)(255 * alpha), (int)(255 * alpha));
+			SPR_DrawAdditive(currentFrame, m_rcSprite.right, y, &scaledRect);
 
-		SPR_Set(m_hSprite, (int)(255 * alpha), (int)(255 * alpha), (int)(255 * alpha));
-		SPR_DrawAdditive(m_fCurrentFrame, m_rcSprite.right * 3, y, &scaledRect);
+			SPR_Set(m_hSprite, (int)(255 * alpha), (int)(255 * alpha), (int)(255 * alpha));
+			SPR_DrawAdditive(currentFrame, m_rcSprite.right * 2, y, &scaledRect);
 
-		SPR_Set(m_hSprite, (int)(255 * alpha), (int)(255 * alpha), (int)(255 * alpha));
-		SPR_DrawAdditive(m_fCurrentFrame, m_rcSprite.right * 4, y, &scaledRect);
+			SPR_Set(m_hSprite, (int)(255 * alpha), (int)(255 * alpha), (int)(255 * alpha));
+			SPR_DrawAdditive(currentFrame, m_rcSprite.right * 3, y, &scaledRect);
 
-		SPR_Set(m_hSprite, (int)(255 * alpha), (int)(105 * alpha), (int)(255 * alpha));
-		SPR_DrawAdditive(m_fCurrentFrame, ScreenWidth - m_rcSprite.right, y, &scaledRect);
+			SPR_Set(m_hSprite, (int)(255 * alpha), (int)(255 * alpha), (int)(255 * alpha));
+			SPR_DrawAdditive(currentFrame, m_rcSprite.right * 4, y, &scaledRect);
 
-		//ConsolePrint("CEK3: Draw ");
+			SPR_Set(m_hSprite, (int)(255 * alpha), (int)(105 * alpha), (int)(255 * alpha));
+			SPR_DrawAdditive(currentFrame, ScreenWidth - m_rcSprite.right, y, &scaledRect);
+		}
 
 		return 1;
 	}
@@ -113,12 +116,11 @@ void CHudBurnEffect::ShowEffect(long duration, long intensity)
 	m_flIntensity = intensity;
 	m_iFlags = HUD_ACTIVE;
 	m_fCurrentFrame = 0;
-	//ConsolePrint("CEK3: Show Effect 1\n");
 }
 
 int CHudBurnEffect::MsgFunc_BurnEffect(const char* pszName, int iSize, void* pbuf)
 {
-	ConsolePrint("CEK3: Show Effect 0\n");
+	ConsolePrint("CEK3: Show Burn Effect\n");
 	BEGIN_READ(pbuf, iSize);
 
 	long duration = READ_LONG();

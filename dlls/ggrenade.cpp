@@ -162,11 +162,12 @@ void CGrenade::Smoke( void )
 		CBaseEntity *pEntity = NULL;
 		while ((pEntity = UTIL_FindEntityInSphere(pEntity, pev->origin, 500)) != NULL)
 		{
-			if (pEntity->IsPlayer())
+			//if (pEntity->IsPlayer())
 			{
 				//CBasePlayer* pPlayer = (CBasePlayer*)pEntity;
-				UTIL_ScreenFade(pEntity, Vector(180, 10, 10), 6.0f, 1.5f, 50, FFADE_IN | FFADE_MODULATE);
-				UTIL_ScreenShake( pev->origin, 500.0, 500.0, 6.0, 100 );
+				//UTIL_ScreenFade(pEntity, Vector(93, 63, 211), 6.0f, 1.5f, 50, FFADE_IN | FFADE_MODULATE);
+				UTIL_ScreenFadeAll(Vector(113, 83, 231), 5.0f, 1.0f, 115, FFADE_IN);
+				UTIL_ScreenShake( pev->origin, 150.0, 150.0, 6.0, 500 );
 			}
 		}
 	}

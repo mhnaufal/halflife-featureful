@@ -126,7 +126,7 @@ typedef struct cl_enginefuncs_s
 	client_sprite_t *(*pfnSPR_GetList)( const char *psz, int *piCount );
 
 	// screen handlers
-	void	(*pfnFillRGBA)( int x, int y, int width, int height, int r, int g, int b, int a );
+	void	(*pfnFillRGBA)( int x, int y, int width, int height, int r, int g, int b, int a ); // NOTEX: can we use this on screen to made it more transparant?
 	int	(*pfnGetScreenInfo)( SCREENINFO *pscrinfo );
 	void	(*pfnSetCrosshair)( HSPRITE hspr, wrect_t rc, int r, int g, int b );
 
@@ -273,7 +273,7 @@ typedef struct cl_enginefuncs_s
 	void		(*pfnSetFilterColor)( float red, float green, float blue );
 	void		(*pfnSetFilterBrightness)( float brightness );
 	void		*(*pfnSequenceGet)( const char *fileName, const char *entryName );
-	void		(*pfnSPR_DrawGeneric)( int frame, int x, int y, const wrect_t *prc, int blendsrc, int blenddst, int width, int height );
+	void		(*pfnSPR_DrawGeneric)( int frame, int x, int y, const wrect_t *prc, int blendsrc, int blenddst, int width, int height ); // NOTEX: or use this to create the blur effect
 	void		*(*pfnSequencePickSentence)( const char *groupName, int pickMethod, int *entryPicked );
 	int		(*pfnDrawString)( int x, int y, const char *str, int r, int g, int b );
 	int		(*pfnDrawStringReverse)( int x, int y, const char *str, int r, int g, int b );
