@@ -122,7 +122,7 @@ int CHud::Redraw( float flTime, int intermission )
 
 //---------------------------------
 // NOTEZ: blur effect redraw
-	m_BlurEffect.Draw(flTime);
+	// m_BlurEffect.Draw(flTime);
 //---------------------------------
 
 #if USE_VGUI

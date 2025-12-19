@@ -159,15 +159,15 @@ void CGrenade::Smoke( void )
 	//* NOTEZ: Screen shake
 	// NOTEX: purple grenade
 	{
-		CBaseEntity *pEntity = NULL;
-		while ((pEntity = UTIL_FindEntityInSphere(pEntity, pev->origin, 500)) != NULL)
+		//CBaseEntity *pEntity = NULL;
+		//while ((pEntity = UTIL_FindEntityInSphere(pEntity, pev->origin, 500)) != NULL)
 		{
 			//if (pEntity->IsPlayer())
 			{
 				//CBasePlayer* pPlayer = (CBasePlayer*)pEntity;
 				//UTIL_ScreenFade(pEntity, Vector(93, 63, 211), 6.0f, 1.5f, 50, FFADE_IN | FFADE_MODULATE);
-				UTIL_ScreenFadeAll(Vector(113, 83, 231), 5.0f, 1.0f, 115, FFADE_IN);
-				UTIL_ScreenShake( pev->origin, 150.0, 150.0, 6.0, 500 );
+				//UTIL_ScreenFadeAll(Vector(113, 83, 231), 5.0f, 1.0f, 115, FFADE_IN);
+				//UTIL_ScreenShake( pev->origin, 150.0, 150.0, 6.0, 500 );
 			}
 		}
 	}
@@ -193,8 +193,8 @@ void CGrenade::Smoke( void )
 	// 		if (pEntity->IsPlayer())
 	// 		{
 	// 			UTIL_ScreenFade(pEntity, Vector(235, 70, 0), 6.0f, 2.0f, 140, FFADE_MODULATE);
-	// 			UTIL_ScreenShake( pev->origin, 500.0, 500.0, 6.0, 500 );
-	// 			UTIL_ScreenFadeAll(Vector(200, 50, 50), 50.0f, 1.0f, 200, FFADE_IN);
+	 			//UTIL_ScreenShake( pev->origin, 500.0, 500.0, 6.0, 500 );
+	 			//UTIL_ScreenFadeAll(Vector(200, 50, 50), 50.0f, 1.0f, 200, FFADE_IN);
 	// 		}
 	// 	}
 	// }

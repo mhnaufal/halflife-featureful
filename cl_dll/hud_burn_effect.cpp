@@ -25,7 +25,6 @@ int CHudBurnEffect::Init(void)
 int CHudBurnEffect::VidInit(void)
 {
 	m_hSprite = SPR_Load("sprites/custom/burned_effect.spr");
-	//m_hBlurSprite = SPR_Load("sprites/white.spr");
 
 	if (m_hSprite)
 	{
