@@ -48,4 +48,7 @@
 #define WEAPON_CAMERA			60
 #define WEAPON_RADIO			61
 
+#define WEAPON_RED_GRENADE		62
+#define WEAPON_PURPLE_GRENADE	63
+
 #endif

@@ -119,7 +119,6 @@ void CHudBurnEffect::ShowEffect(long duration, long intensity)
 
 int CHudBurnEffect::MsgFunc_BurnEffect(const char* pszName, int iSize, void* pbuf)
 {
-	ConsolePrint("CEK3: Show Burn Effect\n");
 	BEGIN_READ(pbuf, iSize);
 
 	long duration = READ_LONG();

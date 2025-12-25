@@ -45,8 +45,8 @@ DLL_GLOBAL	const char *g_pModelNameLaser = "sprites/laserbeam.spr";
 DLL_GLOBAL	short g_sModelIndexLaserDot;// holds the index for the laser beam dot
 DLL_GLOBAL	short g_sModelIndexFireball;// holds the index for the fireball
 DLL_GLOBAL	short g_sModelIndexSmoke;// holds the index for the smoke cloud
-//DLL_GLOBAL	const char* g_pModelNameSmoke = "sprites/steam1.spr";
-DLL_GLOBAL	const char* g_pModelNameSmoke = "sprites/redflare2.spr"; // NOTEX: purple grenade
+DLL_GLOBAL	const char* g_pModelNameSmoke = "sprites/steam1.spr";
+// DLL_GLOBAL	const char* g_pModelNameSmoke = "sprites/redflare2.spr"; // NOTEX: purple grenade
 DLL_GLOBAL	short g_sModelIndexWExplosion;// holds the index for the underwater explosion
 DLL_GLOBAL	short g_sModelIndexBubbles;// holds the index for the bubbles model
 DLL_GLOBAL	short g_sModelIndexBloodDrop;// holds the sprite index for the initial blood
@@ -318,6 +318,8 @@ void RegisterAmmoTypes()
 	g_AmmoRegistry.Register("Trip Mine", TRIPMINE_MAX_CARRY, true);
 	g_AmmoRegistry.Register("Satchel Charge", SATCHEL_MAX_CARRY, true);
 	g_AmmoRegistry.Register("Hand Grenade", HANDGRENADE_MAX_CARRY, true);
+	g_AmmoRegistry.Register("Red Grenade", RED_GRENADE_MAX_CARRY, true);
+	g_AmmoRegistry.Register("Purple Grenade", PURPLE_GRENADE_MAX_CARRY, true);
 	g_AmmoRegistry.Register("Snarks", SNARK_MAX_CARRY, true);
 	g_AmmoRegistry.Register("Hornets", HORNET_MAX_CARRY);
 	g_AmmoRegistry.Register("Medicine", MEDKIT_MAX_CARRY);
@@ -453,6 +455,7 @@ void W_Precache( CBaseEntity* pWorld )
 
 	// used by explosions
 	PRECACHE_MODEL( "models/grenade.mdl" );
+	PRECACHE_MODEL( "models/v_smokegrenade.mdl" );
 	PRECACHE_MODEL( "sprites/explode1.spr" );
 
 	PRECACHE_SOUND( "weapons/bullet_hit1.wav" );	// hit by bullet

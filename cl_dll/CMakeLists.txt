@@ -64,6 +64,8 @@ set (CLDLL_SOURCES
 	../dlls/egon.cpp
 	../dlls/gauss.cpp
 	../dlls/handgrenade.cpp
+	../dlls/red_grenade.cpp
+	../dlls/purple_grenade.cpp
 	../dlls/hornetgun.cpp
 	../dlls/knife.cpp
 	../dlls/mp5.cpp
@@ -277,13 +279,13 @@ if (WIN32)
 		COMMAND ${CMAKE_COMMAND} -E copy_if_different
 			"$<TARGET_FILE:${CLDLL_LIBRARY}>"
 			"${GAME_DLL_OUTPUT_DIR}/$<TARGET_FILE_NAME:${CLDLL_LIBRARY}>"
-		COMMENT "Copying client.dll to Half-Life game directory"
+		COMMENT "Copying client.dll to Half-Life Recon Mod game directory"
 	)
 	add_custom_command(TARGET ${CLDLL_LIBRARY} POST_BUILD
 		COMMAND ${CMAKE_COMMAND} -E copy_if_different
 			"$<TARGET_FILE:${CLDLL_LIBRARY}>"
 			"${GAME_DLL_OUTPUT_DIR}/$<TARGET_FILE_NAME:${CLDLL_LIBRARY}>.pdb"
-		COMMENT "Copying client.pdb to Half-Life game directory"
+		COMMENT "Copying client.pdb to Half-Life Recon Mod game directory"
 	)
 	message(STATUS "Finish copy dlls to Half-Life game folder.")
 endif()

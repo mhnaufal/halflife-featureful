@@ -195,7 +195,8 @@ int gmsgFlashlight = 0;
 int gmsgFlashBattery = 0;
 int gmsgResetHUD = 0;
 int gmsgInitHUD = 0;
-int gmsgFireHUD = 0;
+int gmsgBurnedHUD = 0;
+int gmsgBlurredHUD = 0;
 int gmsgSetFog = 0;
 int gmsgKeyedDLight = 0;
 int gmsgShowGameTitle = 0;
@@ -320,7 +321,10 @@ void LinkUserMessages()
 	gmsgWeaponList = REG_USER_MSG( "WeaponList", -1 );
 	gmsgResetHUD = REG_USER_MSG( "ResetHUD", 1 );		// called every respawn
 	gmsgInitHUD = REG_USER_MSG( "InitHUD", 0 );		// called every time a new player joins the server
-	gmsgFireHUD = REG_USER_MSG( "BurnEffect", 8 );		// called every time a new player joins the server
+	
+	// NOTEZ: how many byte send when using READ_XXX()
+	gmsgBurnedHUD = REG_USER_MSG( "BurnEffect", 8 );
+	gmsgBlurredHUD = REG_USER_MSG( "BlurEffect", 5 );
 
 	gmsgSetFog = REG_USER_MSG("SetFog", 15 );
 	gmsgKeyedDLight = REG_USER_MSG("KeyedDLight", -1 );
@@ -999,16 +1003,33 @@ TakeDamageResult CBasePlayer::TakeDamage( entvars_t *pevInflictor, entvars_t *pe
 	}
 
 	// NOTEZ: this is inside TakeDamage(), so need to actually taking damage!
-	if (gmsgFireHUD > 0 && flDamage > 3.0f)
+	auto is_grenade_obj = dynamic_cast<CGrenade*>(CBaseEntity::Instance(pevInflictor));
+
+	if (gmsgBurnedHUD > 0 && flDamage > 1.0f && is_grenade_obj->m_eGrenadeType == GRENADE_TYPE::RED_GRENADE)
     {
-		ALERT(at_console, "CEK3: create custom HUD smoke effect\n\n");
+		ALERT(at_console, "[RECON] Fire Burned Grenade post effect\n");
 		long duration = 4.0;
 		long intensity = std::min(flDamage / 50.0f, 1.0f); ;
-        MESSAGE_BEGIN(MSG_ONE, gmsgFireHUD, NULL, edict());
+        MESSAGE_BEGIN(MSG_ONE, gmsgBurnedHUD, NULL, edict());
             WRITE_LONG(duration);
             WRITE_LONG(intensity);
         MESSAGE_END();
     }
+
+	if (gmsgBlurredHUD && flDamage > 1.0f && is_grenade_obj->m_eGrenadeType == GRENADE_TYPE::PURPLE_GRENADE)
+	{
+		ALERT(at_console, "[RECON] Purple Hallucination Grenade post effect\n");
+		char activate_blur = '1';
+        MESSAGE_BEGIN(MSG_ONE, gmsgBlurredHUD, NULL, edict());
+            WRITE_CHAR(activate_blur);
+			WRITE_LONG(6.0);
+        MESSAGE_END();
+	}
+
+	if (flDamage > 2.0f && is_grenade_obj->m_eGrenadeType == GRENADE_TYPE::HAND_GRENADE)
+	{
+		ALERT(at_console, "[RECON] Green Grenade\n");
+	}
 
 	return takeDamageResult;
 }
@@ -2718,19 +2739,6 @@ void CBasePlayer::PreThink()
 
 	ItemPreFrame();
 	WaterMove();
-
-	//// NOTEZ:
-	//{
-	//	m_vecPunchVelocity *= 0.9f;
-	//	// Add punch velocity to the current view punch offset
-	//	m_vecViewPunch += m_vecPunchVelocity * gpGlobals->frametime;
-	//	// Apply it to the player's view angles
-	//	pev->v_angle.x += m_vecViewPunch.x;
-	//	pev->v_angle.y += m_vecViewPunch.y;
-	//	// Gradually damp the view punch too
-	//	m_vecViewPunch *= 0.9f;
-	//	//ALERT(at_console, "\n\t\tPLAYER BERGERAK\n\n");
-	//}
 
 	if( g_pGameRules && g_pGameRules->FAllowFlashlight() )
 		m_iHideHUD &= ~HIDEHUD_FLASHLIGHT;

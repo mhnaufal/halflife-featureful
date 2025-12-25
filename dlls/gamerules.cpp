@@ -455,6 +455,12 @@ void CGameRules::RefreshSkillData ()
 	// Hand Grendade
 	gSkillData.plrDmgHandGrenade = GetSkillCvar( "sk_plr_hand_grenade" );
 
+	// Red Grenade
+	gSkillData.plrDmgRedGrenade = GetSkillCvar( "sk_plr_red_grenade" );
+
+	// Purple Grenade
+	gSkillData.plrDmgPurpleGrenade = GetSkillCvar( "sk_plr_purple_grenade" );
+
 	// Satchel Charge
 	gSkillData.plrDmgSatchel = GetSkillCvar( "sk_plr_satchel" );
 

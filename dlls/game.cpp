@@ -298,6 +298,8 @@ bool ModFeatures::EnableWeapon(const char *name, bool enable)
 		WeaponNameAndId("egon", WEAPON_EGON),
 		WeaponNameAndId("hornetgun", WEAPON_HORNETGUN),
 		WeaponNameAndId("handgrenade", WEAPON_HANDGRENADE),
+		WeaponNameAndId("redgrenade", WEAPON_RED_GRENADE),
+		WeaponNameAndId("purplegrenade", WEAPON_PURPLE_GRENADE),
 		WeaponNameAndId("satchel", WEAPON_SATCHEL),
 		WeaponNameAndId("tripmine", WEAPON_TRIPMINE),
 		WeaponNameAndId("snark", WEAPON_SNARK),
@@ -356,6 +358,8 @@ void ModFeatures::EnableDefaultWeapons()
 	weapons[WEAPON_EGON] = true;
 	weapons[WEAPON_HORNETGUN] = true;
 	weapons[WEAPON_HANDGRENADE] = true;
+	weapons[WEAPON_RED_GRENADE] = true;
+	weapons[WEAPON_PURPLE_GRENADE] = true;
 	weapons[WEAPON_SATCHEL] = true;
 	weapons[WEAPON_TRIPMINE] = true;
 	weapons[WEAPON_SNARK] = true;
@@ -1103,6 +1107,12 @@ DECLARE_SKILL_VALUE(sk_plr_egon_wide, "0")
 
 // Hand Grendade
 DECLARE_SKILL_VALUE(sk_plr_hand_grenade, "0")
+
+// Red Grendade
+DECLARE_SKILL_VALUE(sk_plr_red_grenade, "0")
+
+// Purple Grendade
+DECLARE_SKILL_VALUE(sk_plr_purple_grenade, "0")
 
 // Satchel Charge
 DECLARE_SKILL_VALUE(sk_plr_satchel, "0")
@@ -2051,6 +2061,12 @@ void GameDLLInit()
 
 	// Hand Grendade
 	REGISTER_SKILL_CVARS(sk_plr_hand_grenade);
+
+	// Red Grenade
+	REGISTER_SKILL_CVARS(sk_plr_red_grenade);
+
+	// Purple Grenade
+	REGISTER_SKILL_CVARS(sk_plr_purple_grenade);
 
 	// Satchel Charge
 	REGISTER_SKILL_CVARS(sk_plr_satchel);
