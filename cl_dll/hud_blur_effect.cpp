@@ -1,5 +1,5 @@
 /// NOTEX: force OpenGL?
-#ifdef WIN32
+#if defined(WIN32) || defined(_WIN32)
 
 // Prevent tons of unused windows definitions
 #define WIN32_LEAN_AND_MEAN
@@ -26,7 +26,6 @@
 #define NODRAWTEXT
 #define NOGDI
 #define NOKERNEL
-//#define NOUSER //Need GetCursorPos in the mouse thread code
 #define NONLS
 #define NOMB
 #define NOMEMMGR
@@ -90,8 +89,7 @@ DECLARE_MESSAGE(m_BlurEffect, BlurEffect)
 // NOTEZ: Source (https://github.com/bacontsu/codename-borea/blob/spirit/spirit-1.8-trinity-op4/cl_dll/blur.cpp)
 void CBlurTexture::Init(int width, int height)
 {
-	ConsolePrint("COK 1: Init\n");
-	// 3 channels, RGB
+	// NOTEZ: 3 channels, RGB
 	unsigned char* pBlankTexture = new unsigned char[width * height * NUM_OF_CHANNELS];
 
 	memset(pBlankTexture, 0, width * height * NUM_OF_CHANNELS);
@@ -107,21 +105,19 @@ void CBlurTexture::Init(int width, int height)
 
 void CBlurTexture::BindTexture(int width, int height)
 {
-	//ConsolePrint("COK 2: Bind\n");
 	glBindTexture(GL_TEXTURE_RECTANGLE_NV, m_uiTexture);
-	glCopyTexImage2D(GL_TEXTURE_RECTANGLE_NV, 0, GL_RGBA8, 0, 0, ScreenWidth, ScreenHeight, 0);
+	glCopyTexImage2D(GL_TEXTURE_RECTANGLE_NV, 0, GL_RGBA8, 0, 0, width, height, 0);
 }
 
 void CBlurTexture::DrawQuad(int width, int height)
 {
-	ConsolePrint("COK 3: DrawQuad\n");
 	glTexCoord2f(0, 0);
 	glVertex3f(0, 1, -1);
 
 	glTexCoord2f(0, height);
 	glVertex3f(0, 0, -1);
 
-	glTexCoord2f(width, height );
+	glTexCoord2f(width, height);
 	glVertex3f(1, 0, -1);
 
 	glTexCoord2f(width, 0);
@@ -130,7 +126,6 @@ void CBlurTexture::DrawQuad(int width, int height)
 
 void CBlurTexture::Draw(int width, int height)
 {
-	//ConsolePrint("COK 4: Draw\n");
 	glEnable(GL_TEXTURE_RECTANGLE_NV);
 	glColor3d(1, 1, 1);
 	glDisable(GL_DEPTH_TEST);
@@ -164,9 +159,11 @@ void CBlurTexture::Draw(int width, int height)
 
 int CBlurEffect::Init(void)
 {
-	ConsolePrint("COK 5: Init\n");
 	gHUD.AddHudElem(this);
 	HOOK_MESSAGE(BlurEffect);
+
+	m_bIsBlurActive = false;
+	m_flEffectEnd = 0;
 
 	m_iBlurPos = 1;
 	for (int i = 0; i < MAX_MOTIONBLUR_FRAME; i++)
@@ -181,7 +178,6 @@ CBlurEffect gBlur{};
 
 int CBlurEffect::VidInit(void)
 {
-	ConsolePrint("COK 6: VidInit\n");
 	for (int i = 0; i < MAX_MOTIONBLUR_FRAME; i++)
 	{
 		memset(&gBlur.m_pTextures[i], 0, sizeof(gBlur.m_pTextures));
@@ -193,7 +189,12 @@ int CBlurEffect::VidInit(void)
 
 int CBlurEffect::Draw(float flTime)
 {
-	//ConsolePrint("COK 7: Draw\n");
+	if (!m_bIsBlurActive || flTime > m_flEffectEnd)
+	{
+		m_bIsBlurActive = false;
+		return 0;
+	}
+
 	glBlendFunc(GL_ONE_MINUS_SRC_ALPHA, GL_SRC_ALPHA);
 	glEnable(GL_BLEND);
 
@@ -203,7 +204,7 @@ int CBlurEffect::Draw(float flTime)
 		m_pTextures[i].m_fGreen = 1;
 		m_pTextures[i].m_fBlue = 1;
 		m_pTextures[i].Draw(ScreenWidth, ScreenHeight);
-		m_pTextures[i].m_fAlpha = 0.9f;
+		m_pTextures[i].m_fAlpha = 0.95f;
 	}
 
 	if (m_fNextFrameUpdates < gHUD.m_flTime)
@@ -211,7 +212,7 @@ int CBlurEffect::Draw(float flTime)
 		m_pTextures[m_iFrameCounter].BindTexture(ScreenWidth, ScreenHeight);
 		m_iFrameCounter++;
 
-		if (m_iFrameCounter >= 10)
+		if (m_iFrameCounter >= MAX_MOTIONBLUR_FRAME)
 		{
 			m_iFrameCounter = 0;
 		}
@@ -231,7 +232,6 @@ int CBlurEffect::Draw(float flTime)
 
 void CBlurEffect::Reset(void)
 {
-	ConsolePrint("COK 8: Reset\n");
 	m_iFlags = 0;
 
 	for (int i = 0; i < MAX_MOTIONBLUR_FRAME; i++)
@@ -239,37 +239,37 @@ void CBlurEffect::Reset(void)
 		memset(&gBlur.m_pTextures[i], 0, sizeof(gBlur.m_pTextures));
 	}
 	m_fNextFrameUpdates = 0;
+	m_bIsBlurActive = false;
+	m_flEffectEnd = 0;
 }
 
 int CBlurEffect::MsgFunc_BlurEffect(const char* pszName, int iSize, void* pbuf)
 {
-	//ConsolePrint("COK 9: Msg\n");
-	//BEGIN_READ(pbuf, iSize);
-	//ShowEffect();
+	BEGIN_READ(pbuf, iSize);
+
+	char blur_active = READ_CHAR();
+	long duration = READ_LONG();
+
+	if (blur_active == '1')
+	{
+		ShowEffect(true, duration);
+	}
+	else
+	{
+		ShowEffect(false, 0);
+	}
 	return 1;
 }
 
-void CBlurEffect::ShowEffect()
+void CBlurEffect::ShowEffect(bool activate_blur, long duration)
 {
-	ConsolePrint("COK 10: ShowEffect\n");
-	//m_iFlags = HUD_ACTIVE;
+	m_iFlags = HUD_ACTIVE;
+	m_bIsBlurActive = true;
+	m_flEffectEnd = gHUD.m_flTime + duration;
 }
 
 bool CBlurEffect::AnimateNextFrame(int desiredFrameRate)
 {
-	//ConsolePrint("COK 11: Animate\n");
-	//static float last_time = 0.0f;
-	//float elapsed_time = 0.0f;
-
-	//float current_time = GetTickCount64() * 0.001f;
-
-	//elapsed_time = current_time - last_time;
-
-	//if (elapsed_time > (1.0f / desiredFrameRate))
-	//{
-	//	last_time = current_time;
-	//	return true;
-	//}
 	return false;
 }
 

@@ -5,6 +5,13 @@
 #include "effects.h"
 #include "clamp.h"
 
+enum class GRENADE_TYPE : int
+{
+	HAND_GRENADE = 0,		// Green/Corrosive grenade
+	RED_GRENADE = 1,	// Burned grenade
+	PURPLE_GRENADE = 2,		// Hallucination grenade
+};
+
 // Contact Grenade / Timed grenade / Satchel Charge
 class CGrenade : public CBaseMonster
 {
@@ -23,7 +30,7 @@ public:
 
 	void SetProjectileParamsBeforeSpawn(const ProjectileParameters& params) override;
 	void LaunchAsProjectile(const ProjectileParameters& params) override;
-	static CGrenade *ShootTimed( CBaseEntity *pOwner, const Vector& vecStart, const Vector& vecVelocity, float time, EntityOverrides entityOverrides = EntityOverrides() );
+	static CGrenade *ShootTimed( CBaseEntity *pOwner, const Vector& vecStart, const Vector& vecVelocity, float time, EntityOverrides entityOverrides = EntityOverrides(), GRENADE_TYPE grenade_type = GRENADE_TYPE::HAND_GRENADE );
 	static CGrenade *ShootContact( CBaseEntity *pOwner, const Vector& vecStart, const Vector& vecVelocity, EntityOverrides entityOverrides = EntityOverrides() );
 	static CGrenade *ShootSatchelCharge( entvars_t *pevOwner, Vector vecStart, Vector vecVelocity );
 	static void UseSatchelCharges( entvars_t *pevOwner, SATCHELCODE code );
@@ -64,7 +71,11 @@ public:
 	static const NamedSoundScript bounceSoundScript;
 
 	static const NamedVisual handGrenadeVisual;
+	static const NamedVisual redGrenadeVisual;
+	static const NamedVisual purpleGrenadeVisual;
 	static const NamedVisual arGrenadeVisual;
+
+	GRENADE_TYPE m_eGrenadeType = GRENADE_TYPE::HAND_GRENADE;
 };
 
 #endif

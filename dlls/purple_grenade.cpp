@@ -1,9 +1,9 @@
 /***
 *
 *	Copyright (c) 1996-2002, Valve LLC. All rights reserved.
-*	
-*	This product contains software technology licensed from Id 
-*	Software, Inc. ("Id Technology").  Id Technology (c) 1996 Id Software, Inc. 
+*
+*	This product contains software technology licensed from Id
+*	Software, Inc. ("Id Technology").  Id Technology (c) 1996 Id Software, Inc.
 *	All Rights Reserved.
 *
 *   Use, distribution, and modification of this source code and/or resulting
@@ -19,26 +19,24 @@
 #include "monsters.h"
 #include "weapons.h"
 #include "player.h"
+#include "weapons.h"
 
-#define	HANDGRENADE_PRIMARY_VOLUME		450
+#define	PURPLE_GRENADE_PRIMARY_VOLUME		450
 
-enum handgrenade_e
+// NOTEX: based on the .mdl file, animation sequence number
+enum purplegrenade_e
 {
-	HANDGRENADE_IDLE = 0,
-	HANDGRENADE_FIDGET,
-	HANDGRENADE_PINPULL,
-	HANDGRENADE_THROW1,	// toss
-	HANDGRENADE_THROW2,	// medium
-	HANDGRENADE_THROW3,	// hard
-	HANDGRENADE_HOLSTER,
-	HANDGRENADE_DRAW
+	PURPLE_GRENADE_IDLE = 0,
+	PURPLE_GRENADE_PULLPIN,
+	PURPLE_GRENADE_THROW,
+	PURPLE_GRENADE_DEPLOY
 };
 
-class CHandGrenade : public CConfigurableWeapon
+class CPurpleGrenade : public CConfigurableWeapon
 {
 public:
-	int WeaponId() const override { return WEAPON_HANDGRENADE; }
-	bool GetItemInfo(ItemInfo *p) override;
+	int WeaponId() const override { return WEAPON_PURPLE_GRENADE; }
+	bool GetItemInfo(ItemInfo* p) override;
 	WeaponParameters GetDefaultParameters() const override;
 
 	void PrimaryAttack() override;
@@ -52,12 +50,14 @@ public:
 	void SetWeaponData(const weapon_data_t& data) override;
 };
 
-LINK_WEAPON_TO_CLASS( weapon_handgrenade, CHandGrenade )
+LINK_WEAPON_TO_CLASS( weapon_purplegrenade, CPurpleGrenade )
 
-bool CHandGrenade::GetItemInfo( ItemInfo *p )
+bool CPurpleGrenade::GetItemInfo( ItemInfo *p )
 {
-	p->iSlot = 4;
-	p->iPosition = 0;
+	p->pszName = "purple grenade";
+	p->iId = WEAPON_PURPLE_GRENADE;
+	p->iSlot = 5;
+	p->iPosition = 2;
 	p->iFlags = ITEM_FLAG_LIMITINWORLD | ITEM_FLAG_EXHAUSTIBLE;
 	p->pszAmmoEntity = STRING(pev->classname);
 	p->iDropAmmo = MyParameters().initialAmmoAmount.min;
@@ -65,59 +65,60 @@ bool CHandGrenade::GetItemInfo( ItemInfo *p )
 	return true;
 }
 
-WeaponParameters CHandGrenade::GetDefaultParameters() const
+WeaponParameters CPurpleGrenade::GetDefaultParameters() const
 {
 	WeaponParameters params;
 
-	params.initialAmmoAmount = 5;
+	params.initialAmmoAmount = PURPLE_GRENADE_MAX_CARRY;
 	params.maxClip = WEAPON_NOCLIP;
-	params.ammoName = "Hand Grenade";
+	params.ammoName = "Purple Grenade";
 
-	params.worldModel = "models/w_grenade.mdl";
-	params.viewModel = "models/v_grenade.mdl";
-	params.playerModel = "models/p_grenade.mdl";
+	params.worldModel = "models/w_smokegrenade.mdl";
+	params.viewModel = "models/v_smokegrenade.mdl";
+	params.playerModel = "models/p_smokegrenade.mdl";
 	params.playerAnimExt = "crowbar";
-	params.priority = 5;
+	params.priority = 6;
 
-	params.deploy.animIndex = HANDGRENADE_DRAW;
+	params.deploy.animIndex = PURPLE_GRENADE_DEPLOY;
 
 	params.idleAnims.main = WeaponParameters::IdleAnimArray{
-		WeaponParameters::IdleAnim{HANDGRENADE_IDLE, 0.75f, FloatRange(10.0f, 15.0f)},
-		WeaponParameters::IdleAnim{HANDGRENADE_FIDGET, 0.25f, FloatRange(75.0f / 30.0f)},
+		WeaponParameters::IdleAnim{PURPLE_GRENADE_IDLE, 0.75f, FloatRange(10.0f, 15.0f)},
+		WeaponParameters::IdleAnim{PURPLE_GRENADE_PULLPIN, 0.25f, FloatRange(75.0f / 30.0f)},
 	};
+
+	params.fire.fireType = WeaponParameters::Fire::PROJECTILE;
+	params.fire.projectileName = "purple grenade";
+	params.fire.projectileOffsetForward = 5.0f;
+	params.fire.allowUnderwater = true;
 
 	return params;
 }
 
-bool CHandGrenade::Deploy()
+bool CPurpleGrenade::Deploy()
 {
 	m_flReleaseThrow = -1;
-	ALERT(at_console, "\n[RECON] Green Corrosive Grenade grabbed.\n");
+	ALERT(at_console, "[RECON] Purple Hallucination Grenade grabbed.\n");
 	return PerformDeploy();
-	// //* NOTEZ: ngaruh ke objek model ketika diambil/dilempar/jatuh
-	// ALERT(at_console, "\n\tGRENADE DEPLOY\n");
-	// return DefaultDeploy( "models/v_smokegrenade.mdl", "models/w_smokegrenade.mdl", HANDGRENADE_DRAW, "crowbar" );
-	// return DefaultDeploy( "models/v_grenade.mdl", "models/p_grenade.mdl", HANDGRENADE_DRAW, "crowbar" );
 }
 
-bool CHandGrenade::CanHolster()
+bool CPurpleGrenade::CanHolster()
 {
-	// can only holster hand grenades when not primed!
+	// can only holster purple grenades when not primed!
 	return ( m_flStartThrow == 0 );
 }
 
-void CHandGrenade::Holster()
+void CPurpleGrenade::Holster()
 {
 	m_pPlayer->m_flNextAttack = UTIL_WeaponTimeBase() + 0.5f;
 
 	if( HasAmmoToFire() )
 	{
-		SendWeaponAnim( HANDGRENADE_HOLSTER );
+		SendWeaponAnim( PURPLE_GRENADE_DEPLOY );
 	}
 	else
 	{
 		// no more grenades!
-		m_pPlayer->ClearWeaponBit(WEAPON_HANDGRENADE);
+		m_pPlayer->ClearWeaponBit( WEAPON_PURPLE_GRENADE );
 		DestroyItem();
 	}
 
@@ -127,39 +128,39 @@ void CHandGrenade::Holster()
 		m_flReleaseThrow = 0.0f;
 	}
 
-	EMIT_SOUND( ENT( m_pPlayer->pev ), CHAN_WEAPON, "common/null.wav", 1.0f, ATTN_NORM );
+	EMIT_SOUND( ENT( m_pPlayer->pev ), CHAN_WEAPON, "common/bodydrop1.wav", 2.0f, ATTN_NORM );
 }
 
-void CHandGrenade::PrimaryAttack()
+void CPurpleGrenade::PrimaryAttack()
 {
 	if( !m_flStartThrow && HasAmmoToFire() )
 	{
 		m_flStartThrow = gpGlobals->time;
 		m_flReleaseThrow = 0.0f;
 
-		SendWeaponAnim( HANDGRENADE_PINPULL );
+		SendWeaponAnim( PURPLE_GRENADE_DEPLOY );
 		m_flTimeWeaponIdle = UTIL_WeaponTimeBase() + 0.5f;
 	}
 }
 
-bool CHandGrenade::PreferNewPhysics()
+bool CPurpleGrenade::PreferNewPhysics()
 {
-#if CLIENT_DLL
+	#if CLIENT_DLL
 	extern cvar_t *cl_grenadephysics;
 	if (cl_grenadephysics)
 		return (int)cl_grenadephysics->value != 0;
 	return false;
-#else
+	#else
 	if (m_pPlayer)
 		return m_pPlayer->m_iPreferNewGrenadePhysics != 0;
 	return false;
-#endif
+	#endif
 }
 
-void CHandGrenade::WeaponIdle()
+void CPurpleGrenade::WeaponIdle()
 {
 	if( m_flReleaseThrow == 0.0f && m_flStartThrow )
-		 m_flReleaseThrow = gpGlobals->time;
+		m_flReleaseThrow = gpGlobals->time;
 
 	if( m_flTimeWeaponIdle > UTIL_WeaponTimeBase() )
 		return;
@@ -195,21 +196,10 @@ void CHandGrenade::WeaponIdle()
 #if !CLIENT_DLL
 		const Vector vecSrc = m_pPlayer->pev->origin + m_pPlayer->pev->view_ofs + gpGlobals->v_forward * 16.0f;
 		const Vector vecThrow = gpGlobals->v_forward * flVel + m_pPlayer->pev->velocity;
-		CGrenade::ShootTimed( m_pPlayer, vecSrc, vecThrow, time, EntityOverrides{}, GRENADE_TYPE::HAND_GRENADE);
+		CGrenade::ShootTimed(m_pPlayer, vecSrc, vecThrow, time, EntityOverrides{}, GRENADE_TYPE::PURPLE_GRENADE);
 #endif
 
-		if( flVel < 500.0f )
-		{
-			SendWeaponAnim( HANDGRENADE_THROW1 );
-		}
-		else if( flVel < 1000.0f )
-		{
-			SendWeaponAnim( HANDGRENADE_THROW2 );
-		}
-		else
-		{
-			SendWeaponAnim( HANDGRENADE_THROW3 );
-		}
+		SendWeaponAnim( PURPLE_GRENADE_THROW );
 
 		// player "shoot" animation
 		m_pPlayer->SetAnimation( PLAYER_ATTACK1 );
@@ -237,7 +227,7 @@ void CHandGrenade::WeaponIdle()
 
 		if( HasAmmoToFire() )
 		{
-			SendWeaponAnim( HANDGRENADE_DRAW );
+			SendWeaponAnim( PURPLE_GRENADE_DEPLOY );
 		}
 		else
 		{
@@ -256,12 +246,12 @@ void CHandGrenade::WeaponIdle()
 	}
 }
 
-void CHandGrenade::GetWeaponData(weapon_data_t& data)
+void CPurpleGrenade::GetWeaponData(weapon_data_t& data)
 {
 	data.fuser2 = m_flStartThrow;
 	data.fuser3 = m_flReleaseThrow;
 }
-void CHandGrenade::SetWeaponData(const weapon_data_t& data)
+void CPurpleGrenade::SetWeaponData(const weapon_data_t& data)
 {
 	m_flStartThrow = data.fuser2;
 	m_flReleaseThrow = data.fuser3;

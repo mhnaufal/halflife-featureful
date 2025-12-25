@@ -356,6 +356,12 @@ void CHalfLifeMultiplay::RefreshSkillData()
 	// Hand Grendade
 	g_SkillData.ForceValue("plr_hand_grenade", 100.0f);
 
+	// Red Grenade
+	gSkillData.plrDmgRedGrenade = 60;
+
+	// Purple Grenade
+	gSkillData.plrDmgPurpleGrenade = 40;
+
 	// Satchel Charge
 	g_SkillData.ForceValue("plr_satchel", 120.0f);
 

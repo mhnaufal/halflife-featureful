@@ -589,6 +589,7 @@ void CWorld::Precache()
 
 	// sounds used from C physics code
 	PRECACHE_SOUND( "common/null.wav" );// clears sound channels
+	PRECACHE_SOUND( "common/bodydrop1.wav" );// clears sound channels
 
 	RegisterAndPrecacheSoundScript(Items::pickupSoundScript);
 	RegisterAndPrecacheSoundScript(Items::materializeSoundScript);

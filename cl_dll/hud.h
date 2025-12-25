@@ -773,13 +773,16 @@ public:
 	void Reset(void);
 
 	int MsgFunc_BlurEffect(const char* pszName, int iSize, void* pbuf);
-	void ShowEffect();
+	void ShowEffect(bool activate, long duration);
 	bool AnimateNextFrame(int desiredFrameRate);
 
 	int m_iBlurPos{};
-	CBlurTexture m_pTextures[10];
+	CBlurTexture m_pTextures[10]; // NOTEX: MAX_MOTIONBLUR_FRAME
 	int m_iFrameCounter{};
 	float m_fNextFrameUpdates{};
+
+	bool m_bIsBlurActive = false;
+	float m_flEffectEnd{};
 };
 
 class CHudBurnEffect : public CHudBase

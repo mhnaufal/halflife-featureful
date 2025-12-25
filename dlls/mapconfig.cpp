@@ -22,6 +22,10 @@ const char* FixedAmmoName(const char* ammoName)
 {
 	if (stricmp(ammoName, "Hand_Grenade") == 0)
 		return "Hand Grenade";
+	else if (stricmp(ammoName, "Red_Grenade") == 0)
+		return "Red Grenade";
+	else if (stricmp(ammoName, "Purple_Grenade") == 0)
+		return "Purple Grenade";
 	else if (stricmp(ammoName, "Satchel_Charge") == 0)
 		return "Satchel Charge";
 	else if (stricmp(ammoName, "Trip_Mine") == 0)

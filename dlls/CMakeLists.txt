@@ -108,6 +108,8 @@ set (SVDLL_SOURCES
 	h_cycler.cpp
 	h_export.cpp
 	handgrenade.cpp
+	red_grenade.cpp
+	purple_grenade.cpp
 	hassassin.cpp
 	headcrab.cpp
 	healthkit.cpp
@@ -289,12 +291,12 @@ if (WIN32)
 		COMMAND ${CMAKE_COMMAND} -E copy_if_different
 			"$<TARGET_FILE:${SVDLL_LIBRARY}>"
 			"${GAME_DLL_OUTPUT_DIR}/$<TARGET_FILE_NAME:${SVDLL_LIBRARY}>"
-		COMMENT "Copying hl.dll to dany_mod Half-Life game directory"
+		COMMENT "Copying hl.dll to recon_mod Half-Life game directory"
 	)
 	add_custom_command(TARGET ${SVDLL_LIBRARY} POST_BUILD
 		COMMAND ${CMAKE_COMMAND} -E copy_if_different
 			"$<TARGET_FILE:${SVDLL_LIBRARY}>"
 			"${GAME_DLL_OUTPUT_DIR}/$<TARGET_FILE_NAME:${SVDLL_LIBRARY}>.pdb"
-		COMMENT "Copying hl.pdb to dany_mod Half-Life game directory"
+		COMMENT "Copying hl.pdb to recon_mod Half-Life game directory"
 	)
 endif()
