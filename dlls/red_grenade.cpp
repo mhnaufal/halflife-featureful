@@ -132,7 +132,7 @@ void CRedGrenade::Holster()
 		m_flReleaseThrow = 0.0f;
 	}
 
-	EMIT_SOUND( ENT( m_pPlayer->pev ), CHAN_WEAPON, "common/null.wav", 2.0f, ATTN_NORM );
+	EMIT_SOUND( ENT( m_pPlayer->pev ), CHAN_WEAPON, "weapons/ric1.wav", 3.0f, ATTN_NORM );
 }
 
 void CRedGrenade::PrimaryAttack()

@@ -282,6 +282,7 @@ bool ModFeatures::EnableWeapon(const char *name, bool enable)
 		WeaponNameAndId("handgrenade", WEAPON_HANDGRENADE),
 		WeaponNameAndId("redgrenade", WEAPON_RED_GRENADE),
 		WeaponNameAndId("purplegrenade", WEAPON_PURPLE_GRENADE),
+		WeaponNameAndId("greengrenade", WEAPON_GREEN_GRENADE),
 		WeaponNameAndId("satchel", WEAPON_SATCHEL),
 		WeaponNameAndId("tripmine", WEAPON_TRIPMINE),
 		WeaponNameAndId("snark", WEAPON_SNARK),
@@ -343,6 +344,7 @@ void ModFeatures::EnableDefaultWeapons()
 	weapons[WEAPON_HANDGRENADE] = true;
 	weapons[WEAPON_RED_GRENADE] = true;
 	weapons[WEAPON_PURPLE_GRENADE] = true;
+	weapons[WEAPON_GREEN_GRENADE] = true;
 	weapons[WEAPON_SATCHEL] = true;
 	weapons[WEAPON_TRIPMINE] = true;
 	weapons[WEAPON_SNARK] = true;

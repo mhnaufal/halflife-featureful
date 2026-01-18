@@ -110,6 +110,7 @@ set (SVDLL_SOURCES
 	handgrenade.cpp
 	red_grenade.cpp
 	purple_grenade.cpp
+	green_grenade.cpp
 	hassassin.cpp
 	headcrab.cpp
 	healthkit.cpp

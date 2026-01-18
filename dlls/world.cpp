@@ -589,7 +589,8 @@ void CWorld::Precache()
 
 	// sounds used from C physics code
 	PRECACHE_SOUND( "common/null.wav" );// clears sound channels
-	PRECACHE_SOUND( "common/bodydrop1.wav" );// clears sound channels
+	PRECACHE_SOUND( "common/bodydrop1.wav" ); // NOTEX: custom recon grenades sound
+	PRECACHE_SOUND( "common/launch_glow1.wav" ); // NOTEX: custom recon grenades sound
 
 	RegisterAndPrecacheSoundScript(Items::pickupSoundScript);
 	RegisterAndPrecacheSoundScript(Items::materializeSoundScript);

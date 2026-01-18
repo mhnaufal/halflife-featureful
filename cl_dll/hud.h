@@ -808,6 +808,29 @@ private:
 	float m_fFrameRate;
 };
 
+class CHudCorrosiveEffect : public CHudBase
+{
+public:
+    int Init(void);
+    int VidInit(void);
+    int Draw(float flTime);
+    void Reset(void);
+
+    int MsgFunc_CorEffect(const char *pszName, int iSize, void *pbuf);
+    void ShowEffect(long duration, long intensity);
+
+private:
+    HSPRITE m_hSprite;
+    wrect_t m_rcSprite;
+
+    long m_flEffectEnd;
+    long m_flIntensity;
+
+	int m_iTotalFrame;
+	float m_fCurrentFrame;
+	float m_fFrameRate;
+};
+
 //
 //-----------------------------------------------------
 //
@@ -1267,6 +1290,7 @@ public:
 	CHudMonsterInfo		m_MonsterInfo;
 	CHudMeter	m_Meter;
 	CHudBurnEffect m_BurnEffect;
+	CHudCorrosiveEffect m_CorrosiveEffect;
 	CBlurEffect m_BlurEffect;
 
 	void ParseModConfigs();

@@ -34,10 +34,10 @@ enum handgrenade_e
 	HANDGRENADE_DRAW
 };
 
-class CHandGrenade : public CConfigurableWeapon
+class CGreenGrenade : public CConfigurableWeapon
 {
 public:
-	int WeaponId() const override { return WEAPON_HANDGRENADE; }
+	int WeaponId() const override { return WEAPON_GREEN_GRENADE; }
 	bool GetItemInfo(ItemInfo *p) override;
 	WeaponParameters GetDefaultParameters() const override;
 
@@ -52,11 +52,13 @@ public:
 	void SetWeaponData(const weapon_data_t& data) override;
 };
 
-LINK_WEAPON_TO_CLASS( weapon_handgrenade, CHandGrenade )
+LINK_WEAPON_TO_CLASS( weapon_greengrenade, CGreenGrenade )
 
-bool CHandGrenade::GetItemInfo( ItemInfo *p )
+bool CGreenGrenade::GetItemInfo( ItemInfo *p )
 {
-	p->iSlot = 4;
+	p->pszName = "green grenade";
+	p->iId = WEAPON_GREEN_GRENADE;
+	p->iSlot = 7;
 	p->iPosition = 0;
 	p->iFlags = ITEM_FLAG_LIMITINWORLD | ITEM_FLAG_EXHAUSTIBLE;
 	p->pszAmmoEntity = STRING(pev->classname);
@@ -65,13 +67,13 @@ bool CHandGrenade::GetItemInfo( ItemInfo *p )
 	return true;
 }
 
-WeaponParameters CHandGrenade::GetDefaultParameters() const
+WeaponParameters CGreenGrenade::GetDefaultParameters() const
 {
 	WeaponParameters params;
 
-	params.initialAmmoAmount = 5;
+	params.initialAmmoAmount = GREEN_GRENADE_MAX_CARRY;
 	params.maxClip = WEAPON_NOCLIP;
-	params.ammoName = "Hand Grenade";
+	params.ammoName = "Green Grenade";
 
 	params.worldModel = "models/w_grenade.mdl";
 	params.viewModel = "models/v_grenade.mdl";
@@ -86,22 +88,27 @@ WeaponParameters CHandGrenade::GetDefaultParameters() const
 		WeaponParameters::IdleAnim{HANDGRENADE_FIDGET, 0.25f, FloatRange(75.0f / 30.0f)},
 	};
 
+	params.fire.fireType = WeaponParameters::Fire::PROJECTILE;
+	params.fire.projectileName = "green grenade";
+	params.fire.projectileOffsetForward = 1.0f;
+
 	return params;
 }
 
-bool CHandGrenade::Deploy()
+bool CGreenGrenade::Deploy()
 {
 	m_flReleaseThrow = -1;
+	ALERT(at_console, "\n[RECON] Green Corrosive Grenade grabbed.\n");
 	return PerformDeploy();
 }
 
-bool CHandGrenade::CanHolster()
+bool CGreenGrenade::CanHolster()
 {
-	// can only holster hand grenades when not primed!
+	// can only holster green grenades when not primed!
 	return ( m_flStartThrow == 0 );
 }
 
-void CHandGrenade::Holster()
+void CGreenGrenade::Holster()
 {
 	m_pPlayer->m_flNextAttack = UTIL_WeaponTimeBase() + 0.5f;
 
@@ -112,7 +119,7 @@ void CHandGrenade::Holster()
 	else
 	{
 		// no more grenades!
-		m_pPlayer->ClearWeaponBit(WEAPON_HANDGRENADE);
+		m_pPlayer->ClearWeaponBit(WEAPON_GREEN_GRENADE);
 		DestroyItem();
 	}
 
@@ -122,10 +129,10 @@ void CHandGrenade::Holster()
 		m_flReleaseThrow = 0.0f;
 	}
 
-	EMIT_SOUND( ENT( m_pPlayer->pev ), CHAN_WEAPON, "common/null.wav", 1.0f, ATTN_NORM );
+	EMIT_SOUND( ENT( m_pPlayer->pev ), CHAN_WEAPON, "common/launch_glow1.wav", 4.0f, ATTN_NORM );
 }
 
-void CHandGrenade::PrimaryAttack()
+void CGreenGrenade::PrimaryAttack()
 {
 	if( !m_flStartThrow && HasAmmoToFire() )
 	{
@@ -137,7 +144,7 @@ void CHandGrenade::PrimaryAttack()
 	}
 }
 
-bool CHandGrenade::PreferNewPhysics()
+bool CGreenGrenade::PreferNewPhysics()
 {
 #if CLIENT_DLL
 	extern cvar_t *cl_grenadephysics;
@@ -151,7 +158,7 @@ bool CHandGrenade::PreferNewPhysics()
 #endif
 }
 
-void CHandGrenade::WeaponIdle()
+void CGreenGrenade::WeaponIdle()
 {
 	if( m_flReleaseThrow == 0.0f && m_flStartThrow )
 		 m_flReleaseThrow = gpGlobals->time;
@@ -190,7 +197,7 @@ void CHandGrenade::WeaponIdle()
 #if !CLIENT_DLL
 		const Vector vecSrc = m_pPlayer->pev->origin + m_pPlayer->pev->view_ofs + gpGlobals->v_forward * 16.0f;
 		const Vector vecThrow = gpGlobals->v_forward * flVel + m_pPlayer->pev->velocity;
-		CGrenade::ShootTimed( m_pPlayer, vecSrc, vecThrow, time, EntityOverrides{}, GRENADE_TYPE::HAND_GRENADE);
+		CGrenade::ShootTimed( m_pPlayer, vecSrc, vecThrow, time, EntityOverrides{}, GRENADE_TYPE::GREEN_GRENADE);
 #endif
 
 		if( flVel < 500.0f )
@@ -251,12 +258,12 @@ void CHandGrenade::WeaponIdle()
 	}
 }
 
-void CHandGrenade::GetWeaponData(weapon_data_t& data)
+void CGreenGrenade::GetWeaponData(weapon_data_t& data)
 {
 	data.fuser2 = m_flStartThrow;
 	data.fuser3 = m_flReleaseThrow;
 }
-void CHandGrenade::SetWeaponData(const weapon_data_t& data)
+void CGreenGrenade::SetWeaponData(const weapon_data_t& data)
 {
 	m_flStartThrow = data.fuser2;
 	m_flReleaseThrow = data.fuser3;

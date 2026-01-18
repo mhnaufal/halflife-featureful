@@ -57,7 +57,10 @@ const NamedVisual CGrenade::redGrenadeVisual = BuildVisual("RedGrenade.Model")
 		.Model("models/w_grenade.mdl");
 
 const NamedVisual CGrenade::purpleGrenadeVisual = BuildVisual("PurpleGrenade.Model")
-		.Model("models/w_smokegrenade.mdl");
+		.Model("models/w_grenade.mdl");
+
+const NamedVisual CGrenade::greenGrenadeVisual = BuildVisual("GreenGrenade.Model")
+		.Model("models/w_grenade.mdl");
 
 const NamedVisual CGrenade::arGrenadeVisual = BuildVisual("ARGrenade.Model")
 		.Model("models/grenade.mdl");
@@ -159,8 +162,10 @@ void CGrenade::Explode( TraceResult *pTrace, int bitsDamageType )
 	}
 }
 
+// NOTEX: to make the message got recognized
 extern int gmsgBurnedHUD;
 extern int gmsgBlurredHUD;
+extern int gmsgCorrosiveHUD;
 
 void CGrenade::Smoke( void )
 {
@@ -170,12 +175,12 @@ void CGrenade::Smoke( void )
 		CBaseEntity* pEntity = NULL;
 		while ((pEntity = UTIL_FindEntityInSphere(pEntity, pev->origin, 300)) != NULL)
 		{
-			if (pEntity->IsPlayer())
+			if (pEntity->IsPlayer() || pEntity->IsAlienMonster())
 			{
 				CBasePlayer* pPlayer = (CBasePlayer*)pEntity;
-				UTIL_ScreenFade(pEntity, Vector(191, 63, 191), 3.0f, 0.5f, 100, FFADE_IN | FFADE_OUT);
-				//UTIL_ScreenFadeAll(Vector(113, 83, 231), 2.0f, 0.5f, 90, FFADE_IN);
-				UTIL_ScreenShake(pev->origin, 150.0, 150.0, 2.0, 500);
+				UTIL_ScreenFade(pEntity, Vector(207, 192, 205), 3.0f, 0.5f, 180, FFADE_IN | FFADE_OUT);
+				// UTIL_ScreenFadeAll(Vector(113, 83, 231), 2.0f, 0.5f, 90, FFADE_IN);
+				UTIL_ScreenShake(pev->origin, 50.0, 50.0, 1.5, 300);
 			}
 		}
 	}
@@ -184,38 +189,25 @@ void CGrenade::Smoke( void )
 		CBaseEntity* pEntity = NULL;
 		while ((pEntity = UTIL_FindEntityInSphere(pEntity, pev->origin, 300)) != NULL)
 		{
-			if (pEntity->IsPlayer())
+			if (pEntity->IsPlayer() || pEntity->IsAlienMonster())
 			{
-				UTIL_ScreenFade(pEntity, Vector(235, 60, 5), 3.0f, 0.5f, 90, FFADE_IN | FFADE_OUT);
-				UTIL_ScreenShake(pev->origin, 500.0, 500.0, 2.0, 500);
+				UTIL_ScreenFade(pEntity, Vector(235, 1, 35), 3.0f, 0.5f, 85, FFADE_IN | FFADE_OUT);
+				UTIL_ScreenShake(pev->origin, 100.0, 900.0, 2.0, 300);
 			}
 		}
 	}
-	else if (this->m_eGrenadeType == GRENADE_TYPE::HAND_GRENADE)
+	else if (this->m_eGrenadeType == GRENADE_TYPE::GREEN_GRENADE)
 	{
 		CBaseEntity* pEntity = NULL;
 		while ((pEntity = UTIL_FindEntityInSphere(pEntity, pev->origin, 300)) != NULL)
 		{
-			if (pEntity->IsPlayer())
+			if (pEntity->IsPlayer() || pEntity->IsAlienMonster())
 			{
-				UTIL_ScreenFade(pEntity, Vector(0, 255, 5), 6.0f, 0.5f, 140, FFADE_IN);
-				UTIL_ScreenShake(pev->origin, 500.0, 500.0, 3.5, 500);
+				UTIL_ScreenFade(pEntity, Vector(1, 139, 79), 6.0f, 0.5f, 195, FFADE_MODULATE);
+				UTIL_ScreenShake(pev->origin, 900.0, 100.0, 4.5, 300);
 			}
 		}
 	}
-
-	// NOTEX: green grenade
-	// {
-	// 	CBaseEntity *pEntity = NULL;
-	// 	while ((pEntity = UTIL_FindEntityInSphere(pEntity, pev->origin, 500)) != NULL)
-	// 	{
-	// 		if (pEntity->IsPlayer())
-	// 		{
-	// 			UTIL_ScreenFade(pEntity, Vector(0, 202, 114), 6.0f, 0.5f, 190, FFADE_OUT);
-	// 			UTIL_ScreenShake( pev->origin, 1000.0, 500.0, 7.0, 300 );
-	// 		}
-	// 	}
-	// }
 
 	Vector smoke_offset{};
 	smoke_offset.x = 100;
@@ -435,6 +427,7 @@ void CGrenade::Spawn()
 	{
 		ApplyVisualWithOwn(GetVisual(handGrenadeVisual));
 		ApplyVisualWithOwn(GetVisual(redGrenadeVisual));
+		ApplyVisualWithOwn(GetVisual(greenGrenadeVisual));
 	}
 	else
 		ApplyVisualWithOwn(GetVisual(arGrenadeVisual));
@@ -449,7 +442,8 @@ void CGrenade::Precache()
 	RegisterAndPrecacheSoundScript(bounceSoundScript);
 
 	RegisterVisualAsMineOwn(handGrenadeVisual);
-	RegisterVisualAsMineOwn(redGrenadeVisual);
+	RegisterVisualAsMineOwn(redGrenadeVisual);//
+	RegisterVisualAsMineOwn(greenGrenadeVisual);//
 	RegisterVisualAsMineOwn(arGrenadeVisual);
 }
 
@@ -470,6 +464,11 @@ void CGrenade::SetProjectileParamsBeforeSpawn(const ProjectileParameters& params
 	else
 	{
 		SetDefaultProjectileDamage(GetSkillValue("plr_hand_grenade"));
+
+		SetDefaultProjectileDamage(GetSkillValue("plrDmgRedGrenade"));
+		SetDefaultProjectileDamage(GetSkillValue("plrDmgPurpleGrenade"));
+		SetDefaultProjectileDamage(GetSkillValue("plrDmgGreenGrenade"));
+
 		// SetDefaultProjectileDamage(gSkillData.plrDmgHandGrenade);
 		// SetDefaultProjectileDamage(gSkillData.plrDmgRedGrenade);
 		// SetDefaultProjectileDamage(gSkillData.plrDmgPurpleGrenade);

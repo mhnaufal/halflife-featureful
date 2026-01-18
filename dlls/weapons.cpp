@@ -319,6 +319,7 @@ void RegisterAmmoTypes()
 	g_AmmoRegistry.Register("Satchel Charge", SATCHEL_MAX_CARRY, true);
 	g_AmmoRegistry.Register("Hand Grenade", HANDGRENADE_MAX_CARRY, true);
 	g_AmmoRegistry.Register("Red Grenade", RED_GRENADE_MAX_CARRY, true);
+	g_AmmoRegistry.Register("Green Grenade", GREEN_GRENADE_MAX_CARRY, true);
 	g_AmmoRegistry.Register("Purple Grenade", PURPLE_GRENADE_MAX_CARRY, true);
 	g_AmmoRegistry.Register("Snarks", SNARK_MAX_CARRY, true);
 	g_AmmoRegistry.Register("Hornets", HORNET_MAX_CARRY);

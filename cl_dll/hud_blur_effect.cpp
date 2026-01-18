@@ -204,7 +204,7 @@ int CBlurEffect::Draw(float flTime)
 		m_pTextures[i].m_fGreen = 1;
 		m_pTextures[i].m_fBlue = 1;
 		m_pTextures[i].Draw(ScreenWidth, ScreenHeight);
-		m_pTextures[i].m_fAlpha = 0.95f;
+		m_pTextures[i].m_fAlpha = 0.89f;
 	}
 
 	if (m_fNextFrameUpdates < gHUD.m_flTime)

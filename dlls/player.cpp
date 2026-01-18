@@ -204,6 +204,7 @@ int gmsgResetHUD = 0;
 int gmsgInitHUD = 0;
 int gmsgBurnedHUD = 0;
 int gmsgBlurredHUD = 0;
+int gmsgCorrosiveHUD = 0;
 int gmsgSetFog = 0;
 int gmsgKeyedDLight = 0;
 int gmsgShowGameTitle = 0;
@@ -331,6 +332,7 @@ void LinkUserMessages()
 	
 	// NOTEZ: how many byte send when using READ_XXX()
 	gmsgBurnedHUD = REG_USER_MSG( "BurnEffect", 8 );
+	gmsgCorrosiveHUD = REG_USER_MSG( "CorEffect", 8 );
 	gmsgBlurredHUD = REG_USER_MSG( "BlurEffect", 5 );
 
 	gmsgSetFog = REG_USER_MSG("SetFog", 15 );
@@ -1014,7 +1016,7 @@ TakeDamageResult CBasePlayer::TakeDamage( entvars_t *pevInflictor, entvars_t *pe
 
 	if (gmsgBurnedHUD > 0 && flDamage > 1.0f && is_grenade_obj->m_eGrenadeType == GRENADE_TYPE::RED_GRENADE)
     {
-		ALERT(at_console, "[RECON] Fire Burned Grenade post effect\n");
+		ALERT(at_console, "[RECON] Fire Burned Grenade thrown effect\n");
 		long duration = 4.0;
 		long intensity = std::min(flDamage / 50.0f, 1.0f); ;
         MESSAGE_BEGIN(MSG_ONE, gmsgBurnedHUD, NULL, edict());
@@ -1025,7 +1027,7 @@ TakeDamageResult CBasePlayer::TakeDamage( entvars_t *pevInflictor, entvars_t *pe
 
 	if (gmsgBlurredHUD && flDamage > 1.0f && is_grenade_obj->m_eGrenadeType == GRENADE_TYPE::PURPLE_GRENADE)
 	{
-		ALERT(at_console, "[RECON] Purple Hallucination Grenade post effect\n");
+		ALERT(at_console, "[RECON] Purple Hallucination Grenade thrown effect\n");
 		char activate_blur = '1';
         MESSAGE_BEGIN(MSG_ONE, gmsgBlurredHUD, NULL, edict());
             WRITE_CHAR(activate_blur);
@@ -1033,9 +1035,16 @@ TakeDamageResult CBasePlayer::TakeDamage( entvars_t *pevInflictor, entvars_t *pe
         MESSAGE_END();
 	}
 
-	if (flDamage > 2.0f && is_grenade_obj->m_eGrenadeType == GRENADE_TYPE::HAND_GRENADE)
+	if (gmsgCorrosiveHUD && flDamage > 1.0f && is_grenade_obj->m_eGrenadeType == GRENADE_TYPE::GREEN_GRENADE)
 	{
-		ALERT(at_console, "[RECON] Green Grenade\n");
+		ALERT(at_console, "[RECON] Green Corrosive Grenade thrown effect\n");
+		long duration = 6.0;
+		long intensity = std::min(flDamage / 100.0f, 1.0f); ;
+        MESSAGE_BEGIN(MSG_ONE, gmsgCorrosiveHUD, NULL, edict());
+            WRITE_LONG(duration);
+            WRITE_LONG(intensity);
+        MESSAGE_END();
+		ALERT(at_console, "[RECON] Green Corrosive Grenade thrown effect\n");
 	}
 
 	return takeDamageResult;

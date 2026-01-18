@@ -855,6 +855,7 @@ void CHud::Init()
 	hudRenderer.Init();
 	m_BurnEffect.Init();
 	m_BlurEffect.Init();
+	m_CorrosiveEffect.Init();
 
 	gEngfuncs.pfnAddCommand("dump_ammo_types_client", ReportRegisteredAmmoTypes);
 	gEngfuncs.pfnAddCommand("get_message", GetTranslatedMessage);
@@ -1413,6 +1414,7 @@ void CHud::VidInit()
 	hudRenderer.VidInit();
 	m_BurnEffect.VidInit();
 	m_BlurEffect.VidInit();
+	m_CorrosiveEffect.VidInit();
 	memset(&fog, 0, sizeof(fog));
 
 	RecacheValues();

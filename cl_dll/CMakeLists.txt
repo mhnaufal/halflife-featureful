@@ -66,6 +66,7 @@ set (CLDLL_SOURCES
 	../dlls/handgrenade.cpp
 	../dlls/red_grenade.cpp
 	../dlls/purple_grenade.cpp
+	../dlls/green_grenade.cpp
 	../dlls/hornetgun.cpp
 	../dlls/knife.cpp
 	../dlls/mp5.cpp
@@ -118,6 +119,7 @@ set (CLDLL_SOURCES
 	hud_meter.cpp
 	hud_burn_effect.cpp
 	hud_blur_effect.cpp
+	hud_corrosive_effect.cpp
 	hud_monsterinfo.cpp
 	hud_msg.cpp
 	hud_redraw.cpp

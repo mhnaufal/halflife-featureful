@@ -7,9 +7,10 @@
 
 enum class GRENADE_TYPE : int
 {
-	HAND_GRENADE = 0,		// Green/Corrosive grenade
-	RED_GRENADE = 1,	// Burned grenade
-	PURPLE_GRENADE = 2,		// Hallucination grenade
+	HAND_GRENADE = 0,
+	GREEN_GRENADE = 1,		// Green/Corrosive grenade
+	RED_GRENADE = 2,		// Burned grenade
+	PURPLE_GRENADE = 3,		// Hallucination grenade
 };
 
 // Contact Grenade / Timed grenade / Satchel Charge
@@ -73,6 +74,7 @@ public:
 	static const NamedVisual handGrenadeVisual;
 	static const NamedVisual redGrenadeVisual;
 	static const NamedVisual purpleGrenadeVisual;
+	static const NamedVisual greenGrenadeVisual;
 	static const NamedVisual arGrenadeVisual;
 
 	GRENADE_TYPE m_eGrenadeType = GRENADE_TYPE::HAND_GRENADE;
