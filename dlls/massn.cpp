@@ -34,6 +34,11 @@ enum
 	MASSN_HEAD_COUNT,
 };
 
+// enum
+// {
+// 	TLK_HEAL = TLK_CGROUPS,
+// };
+
 // Gun values
 #define MASSN_GUN_MP5				0
 #define MASSN_GUN_SNIPERRIFLE				1
@@ -85,8 +90,11 @@ public:
 
 	void DropMyItems(bool isGibbed);
 
+	const char* DefaultSentenceGroup(int group);
+
 	int m_iHead;
 
+	static const NamedSoundScript COBA;
 	static const NamedSoundScript painSoundScript;
 	static const NamedSoundScript dieSoundScript;
 	static const NamedSoundScript useSoundScript;
@@ -97,9 +105,14 @@ public:
 	static constexpr const char* grenadeLaunchSoundScript = "Massn.GrenadeLaunch";
 	static constexpr const char* sniperSoundScript = "Massn.Sniper";
 
+	bool m_bSaidHello{};
+	static TYPEDESCRIPTION m_SaveData[];
+	void PrescheduleThink() override;
+
 protected:
 	void PlayFirstBurstSounds() override {
 		EmitSoundScript(burst9mmSoundScript);
+		// EmitSoundScriptTalk(burst9mmSoundScript);
 	}
 	void PlayReloadSound() override {
 		EmitSoundScript(reloadSoundScript);
@@ -114,21 +127,44 @@ protected:
 
 LINK_ENTITY_TO_CLASS(monster_male_assassin, CMassn)
 
+TYPEDESCRIPTION	CMassn::m_SaveData[] =
+{
+	DEFINE_FIELD( CMassn, m_bSaidHello, FIELD_BOOLEAN ),
+};
+
+// const NamedSoundScript CMassn::COBA = {
+// 	CHAN_VOICE,
+// 	{
+// 		{"turret/tu_spinup.wav"},
+// 	},
+// 	"Massn.COBA"
+// };
+
 const NamedSoundScript CMassn::painSoundScript = {
 	CHAN_VOICE,
-	{},
+	{
+		"turret/tu_die.wav", 
+		"barney/aimforhead.wav"
+	},
 	"Massn.Pain"
 };
 
 const NamedSoundScript CMassn::dieSoundScript = {
 	CHAN_VOICE,
-	{},
+	{
+		// "doors/doormove5.wav"
+	},
 	"Massn.Die"
 };
 
 const NamedSoundScript CMassn::useSoundScript = {
 	CHAN_VOICE,
-	{},
+	{
+		// "leech/leech_bite3.wav"
+		// , "bullchicken/bc_pain3.wav"
+		// , "apache/ap_rotor4.wav"
+		// , "plats/bigstop2.wav"
+	},
 	"Massn.Use"
 };
 
@@ -140,7 +176,11 @@ const NamedSoundScript CMassn::unuseSoundScript = {
 
 void CMassn::PlayUseSentence()
 {
-	PlaySentenceSoundScript(useSoundScript);
+	// PlaySentenceSoundScript(useSoundScript);
+
+	// EmitSoundScriptTalk(useSoundScript);
+	// JustSpoke();
+	// ALERT(at_console, "DANCOK play usesentence\n");
 }
 
 void CMassn::PlayUnUseSentence()
@@ -150,12 +190,33 @@ void CMassn::PlayUnUseSentence()
 
 bool CMassn::FOkToSpeak()
 {
-	return false;
+	return CHGrunt::FOkToSpeak();
 }
 
 void CMassn::IdleSound()
 {
 }
+
+void CMassn::PrescheduleThink()
+{
+	CHGrunt::PrescheduleThink();
+
+	if ( !m_bSaidHello
+		&& m_MonsterState == MONSTERSTATE_IDLE
+		&& m_hEnemy == 0
+		&& FOkToSpeak() )
+	{
+		CBaseEntity *pPlayer = UTIL_FindEntityByClassname( nullptr, "player" );
+		if ( pPlayer && (pPlayer->pev->origin - pev->origin).Length() <= 512.0f )
+		{
+			ALERT(at_console, "Near player...\n");
+
+			if ( PlaySentenceGroup( "MASSN_HELLO_PLAYER" ) )
+				m_bSaidHello = true;
+		}
+	}
+}
+
 
 void CMassn::Sniperrifle()
 {
@@ -350,6 +411,8 @@ void CMassn::Spawn()
 	SetBodygroup(MASSN_HEAD_GROUP, m_iHead);
 
 	FollowingMonsterInit();
+	
+	// m_afCapability |= bits_CAP_TALK;
 }
 
 void CMassn::MonsterInit()
@@ -361,12 +424,26 @@ void CMassn::MonsterInit()
 	}
 }
 
+// const NamedSoundScript massnshootburst = {
+// 	CHAN_WEAPON,
+// 	{
+// 		//"tentacle/te_sing2.wav"
+// 		// {"turret/tu_spinup.wav"},
+// 		//, "leech/leech_bite3.wav"
+// 		// , "apache/ap_rotor4.wav"
+// 		//, "bullchicken/bc_pain3.wav"
+// 	},
+// 	"MASSN.Turret.Shoot"
+// };
+
 //=========================================================
 // Precache - precaches all resources this monster needs
 //=========================================================
 void CMassn::Precache()
 {
 	PrecacheHelper("models/massn.mdl");
+
+	//RegisterAndPrecacheSoundScript(COBA);
 
 	// Note: these are optional
 	RegisterAndPrecacheSoundScript(painSoundScript);
@@ -375,7 +452,8 @@ void CMassn::Precache()
 	RegisterAndPrecacheSoundScript(unuseSoundScript);
 
 	RegisterAndPrecacheSoundScript(reloadSoundScript, NPC::reloadSoundScript);
-	RegisterAndPrecacheSoundScript(burst9mmSoundScript, NPC::burst9mmSoundScript);
+	// RegisterAndPrecacheSoundScript(burst9mmSoundScript, NPC::burst9mmSoundScript);
+	//RegisterAndPrecacheSoundScript(burst9mmSoundScript, massnshootburst);
 	RegisterAndPrecacheSoundScript(grenadeLaunchSoundScript, NPC::grenadeLaunchSoundScript);
 	RegisterAndPrecacheSoundScript(sniperSoundScript, NPC::sniperSoundScript);
 
@@ -388,9 +466,13 @@ void CMassn::Precache()
 //=========================================================
 // PainSound
 //=========================================================
+
 void CMassn::PainSound()
 {
 	EmitSoundScript(painSoundScript);
+
+	// EmitSoundScriptTalk(painSoundScript);
+	// PlaySentence( SentenceGroup(TLK_NOSHOOT), RANDOM_FLOAT( 2.8, 3.2 ), VOL_NORM, ATTN_NORM );
 }
 
 //=========================================================
@@ -398,7 +480,23 @@ void CMassn::PainSound()
 //=========================================================
 void CMassn::DeathSound()
 {
-	EmitSoundScript(dieSoundScript);
+  // EmitSoundScript(dieSoundScript);
+  // PlayUseSentence();
+
+	auto play_random_sound1 = PlaySentence(
+		"MASSN_DEATH", RANDOM_FLOAT(2.8f, 3.2f), VOL_NORM, ATTN_IDLE, true);
+	ALERT(at_console, play_random_sound1 >= 0
+							? "[RECON] DIE Sound 1 played successfully"
+							: "[RECON] failed to play sound");
+
+	auto play_random_sound2 = SENTENCEG_PlayRndSz(
+		ENT(pev), "MASSN_DEATH", VOL_NORM, ATTN_NORM, 0, PITCH_HIGH);
+	if (play_random_sound2 >= 0)
+		JustSpoke();
+
+	ALERT(at_console, play_random_sound2 >= 0
+							? "[RECON] DIE Sound 2 played successfully"
+							: "[RECON] failed to play sound");
 }
 
 void CMassn::SetHead(int head)
