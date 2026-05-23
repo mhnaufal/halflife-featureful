@@ -209,10 +209,15 @@ void CMassn::PrescheduleThink()
 		CBaseEntity *pPlayer = UTIL_FindEntityByClassname( nullptr, "player" );
 		if ( pPlayer && (pPlayer->pev->origin - pev->origin).Length() <= 512.0f )
 		{
-			ALERT(at_console, "Near player...\n");
+			ALERT(at_console, "[RECON] [MASSN] Near player... - ");
 
-			if ( PlaySentenceGroup( "MASSN_HELLO_PLAYER" ) )
+			if ( PlaySentenceGroup( "MASSN_HELLO" ) ) {
+				ALERT(at_console, "Sound played successfully\n");
 				m_bSaidHello = true;
+			} else {
+				ALERT(at_console, "Sound failed to be played \n");
+				m_bSaidHello = false;
+			}
 		}
 	}
 }
@@ -486,8 +491,8 @@ void CMassn::DeathSound()
 	auto play_random_sound1 = PlaySentence(
 		"MASSN_DEATH", RANDOM_FLOAT(2.8f, 3.2f), VOL_NORM, ATTN_IDLE, true);
 	ALERT(at_console, play_random_sound1 >= 0
-							? "[RECON] DIE Sound 1 played successfully"
-							: "[RECON] failed to play sound");
+							? "[RECON] [MASSN] DIE Sound 1 played successfully\n"
+							: "[RECON] [MASSN] DIE Sound 1 failed to be played\n");
 
 	auto play_random_sound2 = SENTENCEG_PlayRndSz(
 		ENT(pev), "MASSN_DEATH", VOL_NORM, ATTN_NORM, 0, PITCH_HIGH);
@@ -495,8 +500,8 @@ void CMassn::DeathSound()
 		JustSpoke();
 
 	ALERT(at_console, play_random_sound2 >= 0
-							? "[RECON] DIE Sound 2 played successfully"
-							: "[RECON] failed to play sound");
+							? "[RECON] [MASSN] DIE Sound 2 played successfully\n"
+							: "[RECON] [MASSN] DIE Sound 2 failed to be played\n");
 }
 
 void CMassn::SetHead(int head)
