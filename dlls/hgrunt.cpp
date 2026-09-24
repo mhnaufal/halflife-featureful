@@ -101,6 +101,8 @@ TYPEDESCRIPTION	CHGrunt::m_SaveData[] =
 	//DEFINE_FIELD( CShotgun, m_iBrassShell, FIELD_INTEGER ),
 	//DEFINE_FIELD( CShotgun, m_iShotgunShell, FIELD_INTEGER ),
 	DEFINE_FIELD( CHGrunt, m_iSentence, FIELD_INTEGER ),
+	DEFINE_FIELD( CHGrunt, m_hGrenadeToKick, FIELD_EHANDLE ),
+	DEFINE_FIELD( CHGrunt, m_flNextGrenadeKickCheck, FIELD_TIME ),
 };
 
 IMPLEMENT_SAVERESTORE( CHGrunt, CFollowingMonster )
@@ -792,6 +794,65 @@ const char* CHGrunt::ReverseRelationshipModel()
 
 //=========================================================
 //=========================================================
+//=========================================================
+// FindGrenadeToKick - look for a live grenade close enough to
+// boot away, with enough fuse left to be worth it.
+//=========================================================
+#define GRUNT_GRENADE_KICK_RANGE  200.0f  // how close the grenade must be
+#define GRUNT_GRENADE_KICK_MIN_FUSE 0.8f  // need this much fuse left to survive the animation
+#define GRUNT_GRENADE_KICK_SPEED  650.0f  // how hard it gets booted
+
+CBaseEntity *CHGrunt::FindGrenadeToKick()
+{
+	CBaseEntity *pGrenade = NULL;
+	while( ( pGrenade = UTIL_FindEntityByClassname( pGrenade, "grenade" ) ) != NULL )
+	{
+		if( pGrenade->pev->owner == edict() )
+			continue; // our own grenade
+
+		if( pGrenade->pev->dmgtime - gpGlobals->time < GRUNT_GRENADE_KICK_MIN_FUSE )
+			continue; // would blow up mid-kick
+
+		if( ( pGrenade->pev->origin - pev->origin ).Length() > GRUNT_GRENADE_KICK_RANGE )
+			continue;
+
+		if( !FVisible( pGrenade ) )
+			continue;
+
+		return pGrenade;
+	}
+	return NULL;
+}
+
+//=========================================================
+// KickGrenade - called from the kick animation event.
+// Returns true if a grenade was actually sent flying.
+//=========================================================
+bool CHGrunt::KickGrenade()
+{
+	CBaseEntity *pGrenade = m_hGrenadeToKick;
+	m_hGrenadeToKick = NULL;
+
+	if( !pGrenade || pGrenade->pev->flags & FL_KILLME )
+		return false;
+
+	Vector vecDir;
+	if( m_hEnemy != 0 )
+		vecDir = ( m_hEnemy->BodyTarget( pGrenade->pev->origin ) - pGrenade->pev->origin ).Normalize();
+	else
+	{
+		UTIL_MakeVectors( pev->angles );
+		vecDir = gpGlobals->v_forward;
+	}
+
+	pGrenade->pev->velocity = vecDir * GRUNT_GRENADE_KICK_SPEED + Vector( 0, 0, 150 );
+	pGrenade->pev->avelocity = Vector( RANDOM_FLOAT( -400, 400 ), RANDOM_FLOAT( -400, 400 ), 0 );
+	pGrenade->pev->owner = edict();
+
+	ALERT(at_console, "[GRUNT] kicked grenade back\n");
+	return true;
+}
+
 void CHGrunt::PerformKick(int eventIndex, float damage, float zpunch)
 {
 	TraceHullAttackParams params;
@@ -992,7 +1053,8 @@ void CHGrunt::HandleAnimEvent( MonsterEvent_t *pEvent )
 			break;
 		case HGRUNT_AE_KICK:
 		{
-			PerformKick(pEvent->event, GetSkillValue("hgrunt_kick"));
+			if( !KickGrenade() )
+				PerformKick(pEvent->event, GetSkillValue("hgrunt_kick"));
 		}
 			break;
 		case HGRUNT_AE_CAUGHT_ENEMY:
@@ -1153,6 +1215,11 @@ void CHGrunt::StartTask( Task_t *pTask )
 	{
 	case TASK_GRUNT_SPEAK_SENTENCE:
 		SpeakSentence();
+		TaskComplete();
+		break;
+	case TASK_GRUNT_FACE_GRENADE:
+		if( m_hGrenadeToKick != 0 )
+			MakeIdealYaw( m_hGrenadeToKick->pev->origin );
 		TaskComplete();
 		break;
 	case TASK_WALK_PATH:
@@ -1912,6 +1979,33 @@ Task_t tlGruntRepelLand[] =
 	{ TASK_PLAY_SEQUENCE, (float)ACT_LAND },
 };
 
+//=========================================================
+// GruntKickGrenade - boot a live grenade back towards the enemy
+// instead of running for cover.
+//
+// PROTOTYPE: reuses the existing melee kick animation
+// (ACT_MELEE_ATTACK1). Swap in a dedicated kick-grenade sequence
+// once one exists in the model.
+//=========================================================
+Task_t tlGruntKickGrenade[] =
+{
+	{ TASK_STOP_MOVING, 0 },
+	{ TASK_GRUNT_FACE_GRENADE, (float)0 },
+	{ TASK_FACE_IDEAL, (float)0 },
+	{ TASK_PLAY_SEQUENCE, (float)ACT_MELEE_ATTACK1 },
+};
+
+Schedule_t slGruntKickGrenade[] =
+{
+	{
+		tlGruntKickGrenade,
+		ARRAYSIZE( tlGruntKickGrenade ),
+		0, // don't let anything interrupt - the grenade is already ticking
+		0,
+		"GruntKickGrenade"
+	},
+};
+
 DEFINE_CUSTOM_SCHEDULES( CHGrunt )
 {
 	slGruntFail,
@@ -1934,6 +2028,7 @@ DEFINE_CUSTOM_SCHEDULES( CHGrunt )
 	slGruntRangeAttack2,
 	slGruntRepel,
 	slGruntRepelAttack,
+	slGruntKickGrenade,
 };
 
 IMPLEMENT_CUSTOM_SCHEDULES( CHGrunt, CFollowingMonster )
@@ -2013,6 +2108,17 @@ Schedule_t *CHGrunt::GetSchedule()
 		}
 	}
 
+	if( gpGlobals->time > m_flNextGrenadeKickCheck )
+	{
+		m_flNextGrenadeKickCheck = gpGlobals->time + 0.5f;
+		CBaseEntity *pGrenade = FindGrenadeToKick();
+		if( pGrenade )
+		{
+			m_hGrenadeToKick = pGrenade;
+			return GetScheduleOfType( SCHED_GRUNT_KICK_GRENADE );
+		}
+	}
+
 	// grunts place HIGH priority on running away from danger sounds.
 	if( HasConditions( bits_COND_HEAR_SOUND ) )
 	{
@@ -2034,6 +2140,7 @@ Schedule_t *CHGrunt::GetSchedule()
 				{
 					PlayGruntSentence(HGRUNT_SENT_GREN);
 				}
+
 				return GetScheduleOfType( SCHED_TAKE_COVER_FROM_BEST_SOUND );
 			}
 			/*
@@ -2219,6 +2326,8 @@ Schedule_t *CHGrunt::GetScheduleOfType( int Type )
 {
 	switch( Type )
 	{
+	case SCHED_GRUNT_KICK_GRENADE:
+		return &slGruntKickGrenade[0];
 	case SCHED_TAKE_COVER_FROM_ENEMY:
 		{
 			if( InSquad() )

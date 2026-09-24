@@ -112,6 +112,8 @@ TYPEDESCRIPTION	CBasePlayer::m_playerSaveData[] =
 	DEFINE_ARRAY( CBasePlayer, m_rgpPlayerWeapons, FIELD_CLASSPTR, MAX_WEAPONS ),
 	DEFINE_FIELD( CBasePlayer, m_pActiveItem, FIELD_CLASSPTR ),
 	DEFINE_FIELD( CBasePlayer, m_pLastItem, FIELD_CLASSPTR ),
+	DEFINE_FIELD( CBasePlayer, m_pPendingItem, FIELD_CLASSPTR ),
+	DEFINE_FIELD( CBasePlayer, m_flHolsterFinishTime, FIELD_TIME ),
 	DEFINE_FIELD( CBasePlayer, m_WeaponBits, FIELD_INT64 ),
 
 	DEFINE_ARRAY( CBasePlayer, m_rgAmmo, FIELD_INTEGER, MAX_AMMO_TYPES ),
@@ -1268,6 +1270,8 @@ void CBasePlayer::RemoveAllItems( int stripFlags )
 
 void CBasePlayer::RemoveAllWeapons()
 {
+	CancelPendingItemSwitch();
+
 	if( m_pActiveItem )
 	{
 		ResetAutoaim();
@@ -1314,6 +1318,7 @@ KilledResult CBasePlayer::Killed( entvars_t *pevInflictor, entvars_t *pevAttacke
 	CSound *pSound;
 
 	// Holster weapon immediately, to allow it to cleanup
+	CancelPendingItemSwitch();
 	if( m_pActiveItem )
 		m_pActiveItem->Holster();
 
@@ -1907,6 +1912,7 @@ void CBasePlayer::StartObserver( Vector vecPosition, Vector vecViewAngle )
 	MESSAGE_END();
 
 	// Holster weapon immediately, to allow it to cleanup
+	CancelPendingItemSwitch();
 	if( m_pActiveItem )
 		m_pActiveItem->Holster();
 
@@ -4545,6 +4551,76 @@ int CBasePlayer::Restore( CRestore &restore )
 	return status;
 }
 
+bool CBasePlayer::BeginHolsterSwitch( CBasePlayerWeapon *pItem )
+{
+	if( !m_pActiveItem )
+		return false;
+
+	if( m_pPendingItem )
+	{
+		// ALERT(at_console, "[RECON] [HOLSTER] retarget pending -> %s\n", pItem ? STRING(pItem->pev->classname) : "(none)");
+		m_pPendingItem = pItem;
+		return true;
+	}
+
+	const float holsterTime = m_pActiveItem->HolsterAnimDuration();
+
+	ALERT(at_console, "[RECON] [HOLSTER] begin: %s -> %s, holsterTime=%.2f\n",
+		STRING(m_pActiveItem->pev->classname),
+		pItem ? STRING(pItem->pev->classname) : "(none)",
+		holsterTime);
+
+	m_pActiveItem->Holster();
+
+	if( holsterTime <= 0.0f )
+	{
+		ALERT(at_console, "[RECON] [HOLSTER] instant (no holster anim)\n");
+		return false;
+	}
+
+	m_pPendingItem = pItem;
+	m_flHolsterFinishTime = gpGlobals->time + holsterTime;
+	// ALERT(at_console, "[RECON] [HOLSTER] deferred until t=%.2f (now %.2f)\n",m_flHolsterFinishTime, gpGlobals->time);
+	return true;
+}
+
+void CBasePlayer::CancelPendingItemSwitch()
+{
+	if( m_pPendingItem )
+		ALERT(at_console, "[RECON] [HOLSTER] cancelled pending switch\n");
+	m_pPendingItem = NULL;
+	m_flHolsterFinishTime = 0.0f;
+}
+
+void CBasePlayer::FinishPendingItemSwitch()
+{
+	CBasePlayerWeapon *pItem = m_pPendingItem;
+	m_pPendingItem = NULL;
+	m_flHolsterFinishTime = 0.0f;
+
+	ALERT(at_console, "[RECON] [HOLSTER] finish: deploying %s (t=%.2f)\n\n", pItem ? STRING(pItem->pev->classname) : "(none)", gpGlobals->time);
+
+	if( !pItem || !pItem->CanDeploy() )
+	{
+		// ALERT(at_console, "[RECON] [HOLSTER] pending weapon unusable - redeploying old\n\n");
+		if( m_pActiveItem )
+		{
+			m_pActiveItem->m_ForceSendAnimations = true;
+			m_pActiveItem->Deploy();
+			m_pActiveItem->m_ForceSendAnimations = false;
+		}
+		return;
+	}
+
+	m_pLastItem = m_pActiveItem;
+	m_pActiveItem = pItem;
+
+	m_pActiveItem->m_ForceSendAnimations = true;
+	m_pActiveItem->Deploy();
+	m_pActiveItem->m_ForceSendAnimations = false;
+	m_pActiveItem->UpdateItemInfo();
+}
+
 void CBasePlayer::SelectItem( const char *pstr )
 {
 	if( !pstr )
@@ -4568,9 +4644,8 @@ void CBasePlayer::SelectItem( const char *pstr )
 
 	ResetAutoaim();
 
-	// FIX, this needs to queue them up and delay
-	if( m_pActiveItem )
-		m_pActiveItem->Holster();
+	if( BeginHolsterSwitch( pItem ) )
+		return; // deployed by FinishPendingItemSwitch() once the holster anim ends
 
 	m_pLastItem = m_pActiveItem;
 	m_pActiveItem = pItem;
@@ -4598,9 +4673,8 @@ void CBasePlayer::SelectLastItem()
 
 	ResetAutoaim();
 
-	// FIX, this needs to queue them up and delay
-	if( m_pActiveItem )
-		m_pActiveItem->Holster();
+	if( BeginHolsterSwitch( m_pLastItem ) )
+		return; // deployed by FinishPendingItemSwitch() once the holster anim ends
 
 	CBasePlayerWeapon *pTemp = m_pActiveItem;
 	m_pActiveItem = m_pLastItem;
@@ -5319,6 +5393,9 @@ bool CBasePlayer::RemovePlayerItem( CBasePlayerWeapon *pItem, bool bCallHolster 
 	pItem->pev->nextthink = 0;// crowbar may be trying to swing again, etc.
 	pItem->SetThink( NULL );
 
+	if( m_pPendingItem == pItem )
+		CancelPendingItemSwitch();
+
 	if( m_pActiveItem == pItem )
 	{
 		ResetAutoaim();
@@ -5482,6 +5559,9 @@ Called every frame by the player PreThink
 */
 void CBasePlayer::ItemPreFrame()
 {
+	if( m_pPendingItem && gpGlobals->time >= m_flHolsterFinishTime )
+		FinishPendingItemSwitch();
+
 #if CLIENT_WEAPONS
 	if( m_flNextAttack > 0 )
 #else
@@ -6997,10 +7077,8 @@ bool CBasePlayer::SwitchWeapon(CBasePlayerWeapon *pWeapon )
 	
 	ResetAutoaim();
 
-	if( m_pActiveItem )
-	{
-		m_pActiveItem->Holster();
-	}
+	if( BeginHolsterSwitch( pWeapon ) )
+		return true;
 
 	m_pActiveItem = pWeapon;
 

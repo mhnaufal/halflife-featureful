@@ -232,6 +232,8 @@ public:
 	CBasePlayerWeapon *m_pActiveItem;
 	CBasePlayerWeapon *m_pClientActiveItem;  // client version of the active item
 	CBasePlayerWeapon *m_pLastItem;
+	CBasePlayerWeapon *m_pPendingItem;
+	float m_flHolsterFinishTime;
 
 	std::uint64_t m_WeaponBits;
 
@@ -400,6 +402,9 @@ public:
 	void SelectPrevItem( int iItem );
 	void SelectLastItem();
 	void SelectItem(const char *pstr);
+	bool BeginHolsterSwitch(CBasePlayerWeapon *pItem);
+	void FinishPendingItemSwitch();
+	void CancelPendingItemSwitch();
 	void ItemPreFrame();
 	void ItemPostFrame();
 	void GiveNamedItem( const char *szName, int spawnFlags = 0 );

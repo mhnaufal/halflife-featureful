@@ -264,6 +264,7 @@ public:
 
 	virtual void RetireWeapon();
 	virtual void Holster();
+	float HolsterAnimDuration();
 	virtual bool UseDecrement()
 	{
 #if CLIENT_WEAPONS

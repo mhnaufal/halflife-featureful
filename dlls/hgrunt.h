@@ -23,7 +23,8 @@ enum
 	SCHED_GRUNT_REPEL_ATTACK,
 	SCHED_GRUNT_WAIT_FACE_ENEMY,
 	SCHED_GRUNT_TAKECOVER_FAILED,// special schedule type that forces analysis of conditions and picks the best possible schedule to recover from this type of failure.
-	SCHED_GRUNT_ELOF_FAIL
+	SCHED_GRUNT_ELOF_FAIL,
+	SCHED_GRUNT_KICK_GRENADE // boot an incoming grenade back at the enemy
 };
 
 //=========================================================
@@ -33,6 +34,7 @@ enum
 {
 	TASK_GRUNT_FACE_TOSS_DIR = LAST_FOLLOWINGMONSTER_TASK+1,
 	TASK_GRUNT_SPEAK_SENTENCE,
+	TASK_GRUNT_FACE_GRENADE,
 };
 
 typedef enum
@@ -136,6 +138,12 @@ public:
 	int m_iShotgunShell;
 
 	int m_iSentence;
+
+	// Fgrunt kick grenade
+	EHANDLE m_hGrenadeToKick;
+	float m_flNextGrenadeKickCheck;
+	CBaseEntity *FindGrenadeToKick();
+	bool KickGrenade();
 
 	short m_desiredSkin;
 protected:

@@ -2687,6 +2687,14 @@ bool CConfigurableWeapon::CanHolster()
 	return true;
 }
 
+float CBasePlayerWeapon::HolsterAnimDuration()
+{
+	const WeaponParameters& params = MyParameters();
+	if (params.holster.animIndex.Get(InAltMode(), Emptied()) < 0)
+		return 0.0f;
+	return params.holster.attackDelay;
+}
+
 void CConfigurableWeapon::Holster()
 {
 	if (m_pPlayer->m_flEjectBrass != 0.0f)
@@ -2698,9 +2706,6 @@ void CConfigurableWeapon::Holster()
 	ResetBurst();
 	m_fInReload = false;
 	m_iSwingMode = 0;
-
-	m_pPlayer->pev->viewmodel = 0;
-	m_pPlayer->pev->weaponmodel = 0;
 
 	const WeaponParameters& params = MyParameters();
 
@@ -2722,6 +2727,25 @@ void CConfigurableWeapon::Holster()
 
 	if (!mustDestroy)
 		SendWeaponAnim(params.holster.animIndex.Get(m_inAltMode, Emptied()));
+
+	// Keep the viewmodel up while the holster animation plays, otherwise there's
+	// nothing left to render it on. CBasePlayer defers the weapon switch for
+	// HolsterAnimDuration() so the animation is actually visible.
+	bool keepViewmodelForHolster = false;
+#if !CLIENT_DLL
+	keepViewmodelForHolster = !mustDestroy && m_pPlayer->IsAlive() && HolsterAnimDuration() > 0.0f;
+#endif
+#if !CLIENT_DLL
+	ALERT(at_console, "[HOLSTER] %s anim=%d keepViewmodel=%d\n",
+		STRING(pev->classname),
+		params.holster.animIndex.Get(m_inAltMode, Emptied()),
+		(int)keepViewmodelForHolster); // TEMP DEBUG
+#endif
+	if (!keepViewmodelForHolster)
+	{
+		m_pPlayer->pev->viewmodel = 0;
+		m_pPlayer->pev->weaponmodel = 0;
+	}
 
 	ResetZoom(SwitchModeReason::Holster);
 	m_pPlayer->m_bResumeZoom = false;

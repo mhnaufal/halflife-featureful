@@ -125,6 +125,7 @@ protected:
 	void PlayShogtunSound() override {
 		EmitSoundScript(shotgunSoundScript);
 	}
+	const char* SentenceByNumber(int sentence) override;
 };
 
 LINK_ENTITY_TO_CLASS(monster_male_assassin, CMassn)
@@ -144,10 +145,7 @@ TYPEDESCRIPTION	CMassn::m_SaveData[] =
 
 const NamedSoundScript CMassn::painSoundScript = {
 	CHAN_VOICE,
-	{
-		"turret/tu_die.wav", 
-		"barney/aimforhead.wav"
-	},
+	{},
 	"Massn.Pain"
 };
 
@@ -211,25 +209,49 @@ void CMassn::IdleSound()
 {
 }
 
+const char* CMassn::SentenceByNumber(int sentence)
+{
+	static const char* pMassnSentences[HGRUNT_SENT_COUNT] = {
+		"MASSN_GREN",
+		"MASSN_ALERT",
+		"MASSN_MONST",
+		"MASSN_COVER",
+		"MASSN_THROW",
+		"MASSN_CHARGE",
+		"MASSN_TAUNT",
+		"MASSN_CHECK",
+		"MASSN_QUEST",
+		"MASSN_IDLE",
+		"MASSN_CLEAR",
+		"MASSN_ANSWER",
+		"MASSN_HOSTILE",
+	};
+	if (sentence < 0 || sentence >= HGRUNT_SENT_COUNT)
+		return nullptr;
+	return pMassnSentences[sentence];
+}
+
 void CMassn::PrescheduleThink()
 {
 	CHGrunt::PrescheduleThink();
 
 	if ( !m_bSaidHello
-		&& m_MonsterState == MONSTERSTATE_IDLE
+		&& ( m_MonsterState == MONSTERSTATE_IDLE || m_MonsterState == MONSTERSTATE_ALERT )
 		&& m_hEnemy == 0
 		&& FOkToSpeak() )
 	{
 		CBaseEntity *pPlayer = UTIL_FindEntityByClassname( nullptr, "player" );
-		if ( pPlayer && (pPlayer->pev->origin - pev->origin).Length() <= 512.0f )
+		if ( pPlayer
+			&& IRelationship(pPlayer) <= R_NO
+			&& (pPlayer->pev->origin - pev->origin).Length() <= 512.0f )
 		{
 			ALERT(at_console, "[RECON] [MASSN] Near player... - ");
 
 			if ( PlaySentenceGroup( "MASSN_HELLO" ) ) {
-				ALERT(at_console, "Sound played successfully\n");
+				ALERT(at_console, "[RECON] Sound HELLO played successfully\n");
 				m_bSaidHello = true;
 			} else {
-				ALERT(at_console, "Sound failed to be played \n");
+				ALERT(at_console, "[RECON} Sound HELLO failed to be played \n");
 				m_bSaidHello = false;
 			}
 		}
@@ -473,8 +495,7 @@ void CMassn::Precache()
 	RegisterAndPrecacheSoundScript(friendlyFireComplaintSoundScript);
 
 	RegisterAndPrecacheSoundScript(reloadSoundScript, NPC::reloadSoundScript);
-	// RegisterAndPrecacheSoundScript(burst9mmSoundScript, NPC::burst9mmSoundScript);
-	//RegisterAndPrecacheSoundScript(burst9mmSoundScript, massnshootburst);
+	RegisterAndPrecacheSoundScript(burst9mmSoundScript, NPC::burst9mmSoundScript);
 	RegisterAndPrecacheSoundScript(grenadeLaunchSoundScript, NPC::grenadeLaunchSoundScript);
 	RegisterAndPrecacheSoundScript(sniperSoundScript, NPC::sniperSoundScript);
 
@@ -490,10 +511,8 @@ void CMassn::Precache()
 
 void CMassn::PainSound()
 {
-	EmitSoundScript(painSoundScript);
-
-	// EmitSoundScriptTalk(painSoundScript);
-	// PlaySentence( SentenceGroup(TLK_NOSHOOT), RANDOM_FLOAT( 2.8, 3.2 ), VOL_NORM, ATTN_NORM );
+	PlaySentenceGroup("MASSN_PAIN");
+	ALERT(at_console, "[RECON] [MASSN] PAIN Sound played\n");
 }
 
 //=========================================================
@@ -510,8 +529,7 @@ void CMassn::DeathSound()
 							? "[RECON] [MASSN] DIE Sound 1 played successfully\n"
 							: "[RECON] [MASSN] DIE Sound 1 failed to be played\n");
 
-	auto play_random_sound2 = SENTENCEG_PlayRndSz(
-		ENT(pev), "MASSN_DEATH", VOL_NORM, ATTN_NORM, 0, PITCH_HIGH);
+	auto play_random_sound2 = SENTENCEG_PlayRndSz(ENT(pev), "MASSN_DEATH", VOL_NORM, ATTN_NORM, 0, PITCH_HIGH);
 	if (play_random_sound2 >= 0)
 		JustSpoke();
 
