@@ -249,10 +249,10 @@ void CMassn::PrescheduleThink()
 			ALERT(at_console, "[RECON] [MASSN] Near player... - ");
 
 			if ( PlaySentenceGroup( "MASSN_HELLO" ) ) {
-				ALERT(at_console, "[RECON] Sound HELLO played successfully\n");
+				ALERT(at_console, "[RECON] [MASSN] Sound HELLO played successfully\n");
 				m_bSaidHello = true;
 			} else {
-				ALERT(at_console, "[RECON} Sound HELLO failed to be played \n");
+				ALERT(at_console, "[RECON] [MASSN] Sound HELLO failed to be played \n");
 				m_bSaidHello = false;
 			}
 		}

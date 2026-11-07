@@ -4588,16 +4588,16 @@ bool CBasePlayer::BeginHolsterSwitch( CBasePlayerWeapon *pItem )
 
 	const float holsterTime = m_pActiveItem->HolsterAnimDuration();
 
-	ALERT(at_console, "[RECON] [HOLSTER] begin: %s -> %s, holsterTime=%.2f\n",
-		STRING(m_pActiveItem->pev->classname),
-		pItem ? STRING(pItem->pev->classname) : "(none)",
-		holsterTime);
+	// ALERT(at_console, "[RECON] [HOLSTER] begin: %s -> %s, holsterTime=%.2f\n",
+	// 	STRING(m_pActiveItem->pev->classname),
+	// 	pItem ? STRING(pItem->pev->classname) : "(none)",
+	// 	holsterTime);
 
 	m_pActiveItem->Holster();
 
 	if( holsterTime <= 0.0f )
 	{
-		ALERT(at_console, "[RECON] [HOLSTER] instant (no holster anim)\n");
+		// ALERT(at_console, "[RECON] [HOLSTER] instant (no holster anim)\n");
 		return false;
 	}
 
@@ -4621,7 +4621,7 @@ void CBasePlayer::FinishPendingItemSwitch()
 	m_pPendingItem = NULL;
 	m_flHolsterFinishTime = 0.0f;
 
-	ALERT(at_console, "[RECON] [HOLSTER] finish: deploying %s (t=%.2f)\n\n", pItem ? STRING(pItem->pev->classname) : "(none)", gpGlobals->time);
+	// ALERT(at_console, "[RECON] [HOLSTER] finish: deploying %s (t=%.2f)\n\n", pItem ? STRING(pItem->pev->classname) : "(none)", gpGlobals->time);
 
 	if( !pItem || !pItem->CanDeploy() )
 	{

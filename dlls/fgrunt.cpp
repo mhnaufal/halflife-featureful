@@ -40,7 +40,7 @@
 //=========================================================
 #define	FGRUNT_CLIP_SIZE				36 // how many bullets in a clip? - NOTE: 3 round burst sound, so keep as 3 * x!
 #define FGRUNT_LIMP_HEALTH				20
-#define FGRUNT_SENTENCE_VOLUME			0.35
+#define FGRUNT_SENTENCE_VOLUME			0.55
 
 #define FGRUNT_9MMAR					( 1 << 0)
 #define FGRUNT_HANDGRENADE			( 1 << 1)
@@ -237,6 +237,17 @@ public:
 	int		m_iM249Shell;
 	int		m_iM249Link;
 
+	// NOTEZ: Dynamic flashlight over the shoulder - see UpdateShoulderLight().
+	bool	m_isLightOn		=	0;
+	bool	m_bShoulderLightOn = false;
+	float	m_flNextShoulderLight = 0.0f;
+	void	UpdateShoulderLight();
+	// NOTEZ: darkness area detection
+	bool	m_bShoulderLightDark = false;
+	float	m_flNextDarkCheck = 0.0f;
+	float	m_flNextDarkToggle = 0.0f;
+	void	UpdateDarknessState();
+
 	static int g_fGruntAllyQuestion;
 
 	CUSTOM_SCHEDULES
@@ -381,6 +392,8 @@ TYPEDESCRIPTION	CHFGrunt::m_SaveData[] =
 	DEFINE_FIELD( CHFGrunt, m_fStanding, FIELD_BOOLEAN ),
 	DEFINE_FIELD( CHFGrunt, m_fFirstEncounter, FIELD_BOOLEAN ),
 	DEFINE_FIELD( CHFGrunt, m_iHead, FIELD_INTEGER ),
+	DEFINE_FIELD( CHFGrunt, m_bShoulderLightOn, FIELD_BOOLEAN ),
+	DEFINE_FIELD( CHFGrunt, m_bShoulderLightDark, FIELD_BOOLEAN ),
 };
 
 IMPLEMENT_SAVERESTORE( CHFGrunt, CTalkMonster )
@@ -1324,11 +1337,104 @@ bool CHFGrunt::ShouldAnticipateLanding()
 }
 
 //=========================================================
+// NOTEX: UpdateShoulderLight - dynamic flashlight on the grunt's right shoulder.
+// A light_spot is baked into the lightmaps and can't follow him; this does.
+//=========================================================
+#define FG_SHOULDER_LIGHT_ATTACHMENT	2
+#define FG_SHOULDER_LIGHT_RIGHT			9.0f		// units to his right
+#define FG_SHOULDER_LIGHT_UP			-2.0f		// relative to the head bone
+#define FG_SHOULDER_LIGHT_RANGE			800.0f		// how far the beam reaches
+#define FG_SHOULDER_LIGHT_TILT			0.6f		// downward tilt (~31 degrees): lands ~90 units ahead of the shoulder
+#define FG_SHOULDER_LIGHT_LIFT			8.0f		// keep the light this far off the surface
+#define FG_SHOULDER_LIGHT_RADIUS		120.0f
+
+// Two dlights overlap at any moment, so these are about half the colour you'd want.
+#define FG_SHOULDER_LIGHT_R				150
+#define FG_SHOULDER_LIGHT_G				135
+#define FG_SHOULDER_LIGHT_B				105
+
+// darkness detection
+#define FG_SHOULDER_LIGHT_DARKNESS_THRESHOLD	40
+#define FG_SHOULDER_LIGHT_LIT_ABOVE				70
+#define FG_SHOULDER_LIGHT_CHECK_EVERY			0.5f
+#define FG_SHOULDER_LIGHT_MIN_TOGGLE			1.5f
+
+void CHFGrunt::UpdateShoulderLight()
+{
+	if (!m_bShoulderLightOn || !IsAlive())
+		return;
+
+	UpdateDarknessState();
+	if (!m_bShoulderLightDark)
+		return;
+
+	if (gpGlobals->time < m_flNextShoulderLight)
+		return;
+	m_flNextShoulderLight = gpGlobals->time + 0.05f;
+
+	Vector vecAnchor, vecAnchorAngles;
+	GetAttachment(FG_SHOULDER_LIGHT_ATTACHMENT, vecAnchor, vecAnchorAngles);
+	if (vecAnchor.Length() < 1.0f)
+		vecAnchor = pev->origin + Vector(0, 0, 54); // model has no such attachment
+
+	UTIL_MakeVectors(pev->angles);
+	const Vector vecShoulder = vecAnchor
+		+ gpGlobals->v_right * FG_SHOULDER_LIGHT_RIGHT
+		+ gpGlobals->v_up * FG_SHOULDER_LIGHT_UP;
+
+	const Vector vecDir = (gpGlobals->v_forward - gpGlobals->v_up * FG_SHOULDER_LIGHT_TILT).Normalize();
+
+	TraceResult tr;
+	UTIL_TraceLine(vecShoulder, vecShoulder + vecDir * FG_SHOULDER_LIGHT_RANGE, dont_ignore_monsters, ENT(pev), &tr);
+
+	Vector vecLight = tr.vecEndPos;
+	if (tr.flFraction < 1.0f)
+		vecLight = vecLight + tr.vecPlaneNormal * FG_SHOULDER_LIGHT_LIFT;
+
+	MESSAGE_BEGIN(MSG_PVS, SVC_TEMPENTITY, vecLight);
+	WRITE_BYTE(TE_DLIGHT);
+	WRITE_VECTOR(vecLight);
+	WRITE_BYTE((int)(FG_SHOULDER_LIGHT_RADIUS * 0.1f));	// radius / 10
+	WRITE_BYTE(FG_SHOULDER_LIGHT_R);
+	WRITE_BYTE(FG_SHOULDER_LIGHT_G);
+	WRITE_BYTE(FG_SHOULDER_LIGHT_B);
+	WRITE_BYTE(2);	// life * 10
+	WRITE_BYTE(0);	// decay / 10
+	MESSAGE_END();
+}
+
+void CHFGrunt::UpdateDarknessState()
+{
+	if (gpGlobals->time < m_flNextDarkCheck) return;
+
+	m_flNextDarkCheck = gpGlobals->time + FG_SHOULDER_LIGHT_CHECK_EVERY;
+
+	if (gpGlobals->time < m_flNextDarkToggle) return;
+
+	const int illum = Illumination();
+
+	bool dark = m_bShoulderLightDark;
+	if (!dark && illum < FG_SHOULDER_LIGHT_DARKNESS_THRESHOLD)
+		dark = true;
+	else if (dark && illum > FG_SHOULDER_LIGHT_LIT_ABOVE)
+		dark = false;
+
+	if (dark != m_bShoulderLightDark)
+	{
+		m_bShoulderLightDark = dark;
+		m_flNextDarkToggle = gpGlobals->time + FG_SHOULDER_LIGHT_MIN_TOGGLE;
+		ALERT(at_console, "[RECON] [LIGHT] illum=%d -> shoulder light %s\n", illum, dark ? "ON" : "OFF");
+	}
+}
+
+//=========================================================
 // PrescheduleThink - this function runs after conditions
 // are collected and before scheduling code is run.
 //=========================================================
 void CHFGrunt::PrescheduleThink()
 {
+	UpdateShoulderLight();
+
 	if ( pev->movetype == MOVETYPE_FLY && m_MonsterState != MONSTERSTATE_PRONE
 	     && ( FBitSet( pev->flags, FL_ONGROUND ) || ShouldAnticipateLanding() ) )
 	{
@@ -1392,6 +1498,8 @@ bool CHFGrunt::CheckMeleeAttack1 ( float flDot, float flDist )
 	return CTalkMonster::CheckMeleeAttack1(flDot, flDist);
 }
 
+// NOTEZ: contoh nge-cek apakah entity ini punya/attach ke suatu benda
+// NOTEZ: TODO cari tempat yg paling cocok utk ngecek shoulder light.
 //=========================================================
 // CheckRangeAttack1 - overridden for HGrunt, cause
 // FCanCheckAttacks() doesn't disqualify all attacks based
@@ -1402,6 +1510,43 @@ bool CHFGrunt::CheckMeleeAttack1 ( float flDot, float flDist )
 //=========================================================
 bool CHFGrunt::HasWeaponEquiped()
 {
+	// // NOTEZ: temp trying to get grunt spawn light on dark
+	// if( m_iHead == FG_HEAD_MASK && GetBodygroup( FG_GUN_GROUP ) != FG_GUN_NONE )
+	// {
+	// 	m_bShoulderLightOn = true;
+	// }
+
+	// /**
+	//  * Get light_spot entity
+	//  * If light OFF -> ON it
+	//  * if light ON -> OFF it
+	//  */
+	// {
+	// 	auto is_had_mask = m_iHead;
+	// 	auto nama = this->pev->targetname;
+	// 	if (is_had_mask == FG_HEAD_MASK)
+	// 	{
+	// 		//ALERT(at_console, "[RECON] [FGrunt] FGrunt has MASK: %s\n", STRING(nama));
+	// 	}
+
+	// 	CBaseEntity *pLight = UTIL_FindEntityByTargetname( nullptr, "grunt_mask_light" );
+
+	// 	if (pLight && FClassnameIs( pLight->pev, "light_spot"))
+	// 	{
+	// 		if (m_isLightOn)
+	// 		{
+	// 			pLight->Use(this, this, USE_OFF, 0);
+	// 			m_isLightOn = FBitSet(pLight->pev->spawnflags, 0);
+	// 			ALERT(at_console, "[RECON] [FGrunt] Lampu MATI: %d\n", m_isLightOn);
+	// 		}
+	// 		else 
+	// 		{
+	// 			pLight->Use(this, this, USE_ON, 0);
+	// 			m_isLightOn = !FBitSet(pLight->pev->spawnflags, 1);
+	// 			ALERT(at_console, "[RECON] [FGrunt]            Lampu HIDUP: %d\n", m_isLightOn);
+	// 		}
+	// 	}
+	// }
 	return GetBodygroup( FG_GUN_GROUP ) != FG_GUN_NONE;
 }
 
@@ -1898,6 +2043,7 @@ void CHFGrunt::Spawn()
 	m_cAmmoLoaded		= m_cClipSize;
 
 	TalkMonsterInit();
+	m_bShoulderLightOn = ( m_iHead == FG_HEAD_MASK );
 }
 
 void CHFGrunt::SpawnHelper()

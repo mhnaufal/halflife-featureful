@@ -86,6 +86,7 @@
 #define		HGRUNT_AE_GREN_DROP		( 9 )
 #define		HGRUNT_AE_CAUGHT_ENEMY		( 10 ) // grunt established sight with an enemy (player only) that had previously eluded the squad.
 #define		HGRUNT_AE_DROP_GUN		( 11 ) // grunt (probably dead) is dropping his mp5.
+#define		HGRUNT_AE_KICK_GRENADE	( 12 )
 
 LINK_ENTITY_TO_CLASS( monster_human_grunt, CHGrunt )
 
@@ -806,7 +807,7 @@ const char* CHGrunt::ReverseRelationshipModel()
 // boot away, with enough fuse left to be worth it.
 //=========================================================
 #define GRUNT_GRENADE_KICK_RANGE  200.0f  // how close the grenade must be
-#define GRUNT_GRENADE_KICK_MIN_FUSE 0.8f  // need this much fuse left to survive the animation
+#define GRUNT_GRENADE_KICK_MIN_FUSE 1.0f  // need this much fuse left to survive the animation
 #define GRUNT_GRENADE_KICK_SPEED  650.0f  // how hard it gets booted
 
 CBaseEntity *CHGrunt::FindGrenadeToKick()
@@ -856,7 +857,7 @@ bool CHGrunt::KickGrenade()
 	pGrenade->pev->avelocity = Vector( RANDOM_FLOAT( -400, 400 ), RANDOM_FLOAT( -400, 400 ), 0 );
 	pGrenade->pev->owner = edict();
 
-	ALERT(at_console, "[GRUNT] kicked grenade back\n");
+	ALERT(at_console, "[RECON] [HGRUNT] kicked grenade back | animation V2\n");
 	return true;
 }
 
@@ -1064,6 +1065,11 @@ void CHGrunt::HandleAnimEvent( MonsterEvent_t *pEvent )
 				PerformKick(pEvent->event, GetSkillValue("hgrunt_kick"));
 		}
 			break;
+		case HGRUNT_AE_KICK_GRENADE:
+		{
+			KickGrenade();
+		}
+			break;
 		case HGRUNT_AE_CAUGHT_ENEMY:
 		{
 			if( FOkToSpeak() )
@@ -1238,6 +1244,26 @@ void CHGrunt::StartTask( Task_t *pTask )
 			MakeIdealYaw( m_hGrenadeToKick->pev->origin );
 		TaskComplete();
 		break;
+	case TASK_GRUNT_PLAY_KICK_GRENADE:
+		{
+			// NOTEZ: swap animations around
+			// const int seq = LookupSequence( "kick_grenade" );
+			const int seq = LookupSequence( "throwback_grenade" );
+			if (seq > ACTIVITY_NOT_AVAILABLE)
+			{
+				pev->sequence = seq;
+				pev->frame = 0;
+				ResetSequenceInfo();
+				SetYawSpeed();
+				m_IdealActivity = ACT_MELEE_ATTACK1;
+				m_Activity = m_IdealActivity;
+			}
+			else
+			{
+				m_IdealActivity = ACT_MELEE_ATTACK1;
+			}
+			break;
+		}
 	case TASK_WALK_PATH:
 	case TASK_RUN_PATH:
 		// grunt no longer assumes he is covered if he moves
@@ -1279,6 +1305,12 @@ void CHGrunt::RunTask( Task_t *pTask )
 			}
 			break;
 		}
+	case TASK_GRUNT_PLAY_KICK_GRENADE:
+	{
+		if ( m_fSequenceFinished )
+			TaskComplete();
+		break;
+	}
 	default:
 		{
 			CFollowingMonster::RunTask( pTask );
@@ -2008,7 +2040,8 @@ Task_t tlGruntKickGrenade[] =
 	{ TASK_STOP_MOVING, 0 },
 	{ TASK_GRUNT_FACE_GRENADE, (float)0 },
 	{ TASK_FACE_IDEAL, (float)0 },
-	{ TASK_PLAY_SEQUENCE, (float)ACT_MELEE_ATTACK1 },
+	// { TASK_PLAY_SEQUENCE, (float)ACT_MELEE_ATTACK1 },
+	{ TASK_GRUNT_PLAY_KICK_GRENADE, (float)0 },
 };
 
 Schedule_t slGruntKickGrenade[] =
