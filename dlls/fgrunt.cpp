@@ -193,6 +193,10 @@ public:
 	static constexpr const char* m249SoundScript = "HGruntAlly.M249";
 
 	static const NamedSoundScript m249ReloadSoundScript;
+	static const NamedSoundScript flashlightOnSoundScript;
+	static const NamedSoundScript flashlightOffSoundScript;
+	static const NamedSoundScript nvgOnSoundScript;
+	static const NamedSoundScript nvgOffSoundScript;
 
 	void GibMonster() override;
 	void SpeakSentence();
@@ -297,6 +301,30 @@ const NamedSoundScript CHFGrunt::m249ReloadSoundScript = {
 	CHAN_WEAPON,
 	{"weapons/saw_reload.wav"},
 	"HGruntAlly.ReloadM249"
+};
+
+const NamedSoundScript CHFGrunt::flashlightOnSoundScript = {
+	CHAN_ITEM,
+	{"items/flashlight1.wav"},
+	"HGruntAlly.FlashlightOn"
+};
+
+const NamedSoundScript CHFGrunt::flashlightOffSoundScript = {
+	CHAN_ITEM,
+	{"items/flashlight1.wav"},
+	"HGruntAlly.FlashlightOff"
+};
+
+const NamedSoundScript CHFGrunt::nvgOnSoundScript = {
+	CHAN_ITEM,
+	{},
+	"HGruntAlly.NVGOn"
+};
+
+const NamedSoundScript CHFGrunt::nvgOffSoundScript = {
+	CHAN_ITEM,
+	{},
+	"HGruntAlly.NVGOff"
 };
 
 class CMedic : public CHFGrunt
@@ -1337,25 +1365,40 @@ bool CHFGrunt::ShouldAnticipateLanding()
 }
 
 //=========================================================
-// NOTEX: UpdateShoulderLight - dynamic flashlight on the grunt's right shoulder.
+// UpdateShoulderLight - dynamic light carried on the grunt's head.
 // A light_spot is baked into the lightmaps and can't follow him; this does.
+//
+// GoldSrc dynamic lights are round (no cone), so the light is not floated in
+// front of him. A beam is traced and the light is put on the surface it hits:
+//  - he can see his enemy: the floor under the enemy, so the pool is where he
+//    is shooting, not on the enemy's model
+//  - otherwise: the way he's facing, tilted down
+//
+// Mask heads wear night vision (green light), every other head a flashlight
+// (white light). The light is anchored to attachment 2 (Head bone), which has
+// the same index in both hgrunt_opfor models; bone indices differ.
 //=========================================================
 #define FG_SHOULDER_LIGHT_ATTACHMENT	2
-#define FG_SHOULDER_LIGHT_RIGHT			9.0f		// units to his right
-#define FG_SHOULDER_LIGHT_UP			-2.0f		// relative to the head bone
-#define FG_SHOULDER_LIGHT_RANGE			800.0f		// how far the beam reaches
-#define FG_SHOULDER_LIGHT_TILT			0.6f		// downward tilt (~31 degrees): lands ~90 units ahead of the shoulder
+#define FG_SHOULDER_LIGHT_RIGHT			0.0f		// units to his right; 0 = centred on the head
+#define FG_SHOULDER_LIGHT_UP			2.0f		// relative to the head bone
+#define FG_SHOULDER_LIGHT_RANGE			800.0f		// how far the facing beam reaches
+#define FG_SHOULDER_LIGHT_TILT			0.6f		// downward tilt (~31 degrees): lands ~90 units ahead
 #define FG_SHOULDER_LIGHT_LIFT			8.0f		// keep the light this far off the surface
 #define FG_SHOULDER_LIGHT_RADIUS		120.0f
+#define FG_SHOULDER_LIGHT_ENEMY_RANGE	1024.0f		// aim at the enemy's feet only within this distance
 
 // Two dlights overlap at any moment, so these are about half the colour you'd want.
-#define FG_SHOULDER_LIGHT_R				150
-#define FG_SHOULDER_LIGHT_G				135
-#define FG_SHOULDER_LIGHT_B				105
+// Flashlight (white) and night vision (green), both lower than the first version.
+#define FG_FLASHLIGHT_R					110
+#define FG_FLASHLIGHT_G					105
+#define FG_FLASHLIGHT_B					90
+#define FG_NVG_R						35
+#define FG_NVG_G						120
+#define FG_NVG_B						45
 
 // darkness detection
 #define FG_SHOULDER_LIGHT_DARKNESS_THRESHOLD	40
-#define FG_SHOULDER_LIGHT_LIT_ABOVE				70
+#define FG_SHOULDER_LIGHT_LIT_ABOVE				50
 #define FG_SHOULDER_LIGHT_CHECK_EVERY			0.5f
 #define FG_SHOULDER_LIGHT_MIN_TOGGLE			1.5f
 
@@ -1378,26 +1421,49 @@ void CHFGrunt::UpdateShoulderLight()
 		vecAnchor = pev->origin + Vector(0, 0, 54); // model has no such attachment
 
 	UTIL_MakeVectors(pev->angles);
-	const Vector vecShoulder = vecAnchor
+	const Vector vecSource = vecAnchor
 		+ gpGlobals->v_right * FG_SHOULDER_LIGHT_RIGHT
 		+ gpGlobals->v_up * FG_SHOULDER_LIGHT_UP;
 
-	const Vector vecDir = (gpGlobals->v_forward - gpGlobals->v_up * FG_SHOULDER_LIGHT_TILT).Normalize();
+	Vector vecLight = vecSource;
+	bool found = false;
 
-	TraceResult tr;
-	UTIL_TraceLine(vecShoulder, vecShoulder + vecDir * FG_SHOULDER_LIGHT_RANGE, dont_ignore_monsters, ENT(pev), &tr);
+	if (m_hEnemy != 0 && HasConditions(bits_COND_SEE_ENEMY))
+	{
+		const Vector vecEnemy = m_hEnemy->pev->origin;
+		if ((vecEnemy - pev->origin).Length() <= FG_SHOULDER_LIGHT_ENEMY_RANGE)
+		{
+			TraceResult trFloor;
+			UTIL_TraceLine(vecEnemy, vecEnemy - Vector(0, 0, 128), ignore_monsters, m_hEnemy->edict(), &trFloor);
+			if (trFloor.flFraction < 1.0f)
+			{
+				vecLight = trFloor.vecEndPos + trFloor.vecPlaneNormal * FG_SHOULDER_LIGHT_LIFT;
+				found = true;
+			}
+		}
+	}
 
-	Vector vecLight = tr.vecEndPos;
-	if (tr.flFraction < 1.0f)
-		vecLight = vecLight + tr.vecPlaneNormal * FG_SHOULDER_LIGHT_LIFT;
+	if (!found)
+	{
+		const Vector vecDir = (gpGlobals->v_forward - gpGlobals->v_up * FG_SHOULDER_LIGHT_TILT).Normalize();
+
+		TraceResult tr;
+		UTIL_TraceLine(vecSource, vecSource + vecDir * FG_SHOULDER_LIGHT_RANGE, dont_ignore_monsters, ENT(pev), &tr);
+
+		vecLight = tr.vecEndPos;
+		if (tr.flFraction < 1.0f)
+			vecLight = vecLight + tr.vecPlaneNormal * FG_SHOULDER_LIGHT_LIFT;
+	}
+
+	const bool nvg = (m_iHead == FG_HEAD_MASK);
 
 	MESSAGE_BEGIN(MSG_PVS, SVC_TEMPENTITY, vecLight);
 	WRITE_BYTE(TE_DLIGHT);
 	WRITE_VECTOR(vecLight);
 	WRITE_BYTE((int)(FG_SHOULDER_LIGHT_RADIUS * 0.1f));	// radius / 10
-	WRITE_BYTE(FG_SHOULDER_LIGHT_R);
-	WRITE_BYTE(FG_SHOULDER_LIGHT_G);
-	WRITE_BYTE(FG_SHOULDER_LIGHT_B);
+	WRITE_BYTE(nvg ? FG_NVG_R : FG_FLASHLIGHT_R);
+	WRITE_BYTE(nvg ? FG_NVG_G : FG_FLASHLIGHT_G);
+	WRITE_BYTE(nvg ? FG_NVG_B : FG_FLASHLIGHT_B);
 	WRITE_BYTE(2);	// life * 10
 	WRITE_BYTE(0);	// decay / 10
 	MESSAGE_END();
@@ -1423,7 +1489,14 @@ void CHFGrunt::UpdateDarknessState()
 	{
 		m_bShoulderLightDark = dark;
 		m_flNextDarkToggle = gpGlobals->time + FG_SHOULDER_LIGHT_MIN_TOGGLE;
-		ALERT(at_console, "[RECON] [LIGHT] illum=%d -> shoulder light %s\n", illum, dark ? "ON" : "OFF");
+
+		const bool nvg = (m_iHead == FG_HEAD_MASK);
+		const NamedSoundScript& click = dark
+			? (nvg ? nvgOnSoundScript : flashlightOnSoundScript)
+			: (nvg ? nvgOffSoundScript : flashlightOffSoundScript);
+		EmitSoundScript(click);
+
+		ALERT(at_console, "[RECON] [LIGHT] illum=%d -> %s %s\n", illum, nvg ? "night vision" : "flashlight", dark ? "ON" : "OFF");
 	}
 }
 
@@ -2043,7 +2116,7 @@ void CHFGrunt::Spawn()
 	m_cAmmoLoaded		= m_cClipSize;
 
 	TalkMonsterInit();
-	m_bShoulderLightOn = ( m_iHead == FG_HEAD_MASK );
+	m_bShoulderLightOn = true;
 }
 
 void CHFGrunt::SpawnHelper()
@@ -2082,6 +2155,10 @@ void CHFGrunt::Precache()
 	RegisterAndPrecacheSoundScript(painSoundScript);
 	RegisterAndPrecacheSoundScript(dieSoundScript);
 	RegisterAndPrecacheSoundScript(callMedicSoundScript);
+	RegisterAndPrecacheSoundScript(flashlightOnSoundScript);
+	RegisterAndPrecacheSoundScript(flashlightOffSoundScript);
+	RegisterAndPrecacheSoundScript(nvgOnSoundScript);
+	RegisterAndPrecacheSoundScript(nvgOffSoundScript);
 
 	RegisterAndPrecacheSoundScript(reloadSoundScript, NPC::reloadSoundScript);
 	RegisterAndPrecacheSoundScript(burst9mmSoundScript, NPC::burst9mmSoundScript);

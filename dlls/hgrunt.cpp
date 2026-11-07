@@ -2180,7 +2180,7 @@ Schedule_t *CHGrunt::GetSchedule()
 		// this may only affect a single individual in a squad.
 		if( FOkToSpeak() )
 		{
-			if( pSound->m_iType & bits_SOUND_DANGER )
+			if( bits_SOUND_DANGER )
 			{
 				// dangerous sound nearby!
 

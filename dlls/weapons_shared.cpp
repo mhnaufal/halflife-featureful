@@ -2748,10 +2748,10 @@ void CConfigurableWeapon::Holster()
 	keepViewmodelForHolster = !mustDestroy && m_pPlayer->IsAlive() && HolsterAnimDuration() > 0.0f;
 #endif
 #if !CLIENT_DLL
-	ALERT(at_console, "[HOLSTER] %s anim=%d keepViewmodel=%d\n",
-		STRING(pev->classname),
-		params.holster.animIndex.Get(m_inAltMode, Emptied()),
-		(int)keepViewmodelForHolster); // TEMP DEBUG
+	// ALERT(at_console, "[HOLSTER] %s anim=%d keepViewmodel=%d\n",
+	// 	STRING(pev->classname),
+	// 	params.holster.animIndex.Get(m_inAltMode, Emptied()),
+	// 	(int)keepViewmodelForHolster); // TEMP DEBUG
 #endif
 	if (!keepViewmodelForHolster)
 	{
