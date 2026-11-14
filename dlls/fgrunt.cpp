@@ -252,6 +252,13 @@ public:
 	float	m_flNextDarkToggle = 0.0f;
 	void	UpdateDarknessState();
 
+	// Glow on the lamp + visible beam to the lit spot - see UpdateLightGlow().
+	EHANDLE	m_hLightGlow;
+	int		m_iLightBeamSprite = 0;
+	int		m_iNvgBeamSprite = 0;
+	void	UpdateLightGlow();
+	void	UpdateOnRemove() override;
+
 	static int g_fGruntAllyQuestion;
 
 	CUSTOM_SCHEDULES
@@ -422,6 +429,7 @@ TYPEDESCRIPTION	CHFGrunt::m_SaveData[] =
 	DEFINE_FIELD( CHFGrunt, m_iHead, FIELD_INTEGER ),
 	DEFINE_FIELD( CHFGrunt, m_bShoulderLightOn, FIELD_BOOLEAN ),
 	DEFINE_FIELD( CHFGrunt, m_bShoulderLightDark, FIELD_BOOLEAN ),
+	DEFINE_FIELD( CHFGrunt, m_hLightGlow, FIELD_EHANDLE ),
 };
 
 IMPLEMENT_SAVERESTORE( CHFGrunt, CTalkMonster )
@@ -1395,6 +1403,27 @@ bool CHFGrunt::ShouldAnticipateLanding()
 #define FG_NVG_R						35
 #define FG_NVG_G						120
 #define FG_NVG_B						45
+#define FG_NVG_RADIUS					60.0f		// night vision light is much smaller than the flashlight
+
+// Lamp glow: a sprite attached to the head. Beam: a faint additive shaft from the head to the lit spot.
+#define FG_LIGHT_GLOW_SPRITE			"sprites/glow02.spr"
+#define FG_LIGHT_GLOW_SCALE				0.45f
+#define FG_FLASHLIGHT_GLOW_BRIGHTNESS	120
+#define FG_NVG_GLOW_BRIGHTNESS			80
+#define FG_FLASHLIGHT_BEAM_SPRITE	"sprites/spotlight01.spr"	// funnel-shaped; other options: flare1.spr, flare3.spr
+#define FG_NVG_BEAM_SPRITE			"sprites/spotlight02.spr"
+#define FG_LIGHT_BEAM_WIDTH_PER_UNIT	0.8f
+#define FG_LIGHT_BEAM_WIDTH_MIN			20
+#define FG_LIGHT_BEAM_WIDTH_MAX			200
+#define FG_LIGHT_BEAM_BRIGHTNESS		20
+
+// Full-strength colours for the glow and the beam (the dlight colours above are halved).
+#define FG_FLASHLIGHT_FX_R			255
+#define FG_FLASHLIGHT_FX_G			245
+#define FG_FLASHLIGHT_FX_B			215
+#define FG_NVG_FX_R					90
+#define FG_NVG_FX_G					255
+#define FG_NVG_FX_B					110
 
 // darkness detection
 #define FG_SHOULDER_LIGHT_DARKNESS_THRESHOLD	40
@@ -1402,12 +1431,52 @@ bool CHFGrunt::ShouldAnticipateLanding()
 #define FG_SHOULDER_LIGHT_CHECK_EVERY			0.5f
 #define FG_SHOULDER_LIGHT_MIN_TOGGLE			1.5f
 
+void CHFGrunt::UpdateLightGlow()
+{
+	const bool wanted = m_bShoulderLightDark && IsAlive();
+	CBaseEntity* pGlow = m_hLightGlow;
+
+	if (!wanted)
+	{
+		if (pGlow)
+			UTIL_RemoveAndClean(m_hLightGlow);
+		return;
+	}
+
+	if (pGlow)
+		return;
+
+	const bool nvg = (m_iHead == FG_HEAD_MASK);
+
+	CSprite* pSprite = CSprite::SpriteCreate(FG_LIGHT_GLOW_SPRITE, pev->origin);
+	if (!pSprite)
+		return;
+
+	pSprite->SetTransparency(kRenderGlow,
+		nvg ? FG_NVG_FX_R : FG_FLASHLIGHT_FX_R,
+		nvg ? FG_NVG_FX_G : FG_FLASHLIGHT_FX_G,
+		nvg ? FG_NVG_FX_B : FG_FLASHLIGHT_FX_B,
+		nvg ? FG_NVG_GLOW_BRIGHTNESS : FG_FLASHLIGHT_GLOW_BRIGHTNESS, kRenderFxNoDissipation);
+	pSprite->SetScale(FG_LIGHT_GLOW_SCALE);
+	pSprite->SetAttachment(edict(), FG_SHOULDER_LIGHT_ATTACHMENT + 1);
+	pSprite->pev->spawnflags |= SF_SPRITE_TRANSIT;
+
+	m_hLightGlow = pSprite;
+}
+
+void CHFGrunt::UpdateOnRemove()
+{
+	UTIL_RemoveAndClean(m_hLightGlow);
+	CTalkMonster::UpdateOnRemove();
+}
+
 void CHFGrunt::UpdateShoulderLight()
 {
 	if (!m_bShoulderLightOn || !IsAlive())
 		return;
 
 	UpdateDarknessState();
+	UpdateLightGlow();
 	if (!m_bShoulderLightDark)
 		return;
 
@@ -1425,10 +1494,14 @@ void CHFGrunt::UpdateShoulderLight()
 		+ gpGlobals->v_right * FG_SHOULDER_LIGHT_RIGHT
 		+ gpGlobals->v_up * FG_SHOULDER_LIGHT_UP;
 
+	// Mask heads: the light comes from the mask itself, so it stays on the way he faces
+	// and never swings towards his target. Only the flashlight does that.
+	const bool nvg = (m_iHead == FG_HEAD_MASK);
+
 	Vector vecLight = vecSource;
 	bool found = false;
 
-	if (m_hEnemy != 0 && HasConditions(bits_COND_SEE_ENEMY))
+	if (!nvg && m_hEnemy != 0 && HasConditions(bits_COND_SEE_ENEMY))
 	{
 		const Vector vecEnemy = m_hEnemy->pev->origin;
 		if ((vecEnemy - pev->origin).Length() <= FG_SHOULDER_LIGHT_ENEMY_RANGE)
@@ -1450,17 +1523,43 @@ void CHFGrunt::UpdateShoulderLight()
 		TraceResult tr;
 		UTIL_TraceLine(vecSource, vecSource + vecDir * FG_SHOULDER_LIGHT_RANGE, dont_ignore_monsters, ENT(pev), &tr);
 
-		vecLight = tr.vecEndPos;
-		if (tr.flFraction < 1.0f)
-			vecLight = vecLight + tr.vecPlaneNormal * FG_SHOULDER_LIGHT_LIFT;
+		if (tr.flFraction >= 1.0f)
+			return;
+
+		vecLight = tr.vecEndPos + tr.vecPlaneNormal * FG_SHOULDER_LIGHT_LIFT;
 	}
 
-	const bool nvg = (m_iHead == FG_HEAD_MASK);
+	const float flBeamLength = (vecLight - vecSource).Length();
+	int beamWidth = (int)(flBeamLength * FG_LIGHT_BEAM_WIDTH_PER_UNIT);
+	if (beamWidth < FG_LIGHT_BEAM_WIDTH_MIN)
+		beamWidth = FG_LIGHT_BEAM_WIDTH_MIN;
+	if (beamWidth > FG_LIGHT_BEAM_WIDTH_MAX)
+		beamWidth = FG_LIGHT_BEAM_WIDTH_MAX;
+
+	// Visible shaft from the lamp to the lit spot. TE_BEAMENTPOINT follows the head attachment
+	// on the client, so the start doesn't lag. Not keyed: life is twice the send interval,
+	// so two overlap at any moment (the brightness below is chosen with that in mind).
+	MESSAGE_BEGIN(MSG_PVS, SVC_TEMPENTITY, vecSource);
+	WRITE_BYTE(TE_BEAMENTPOINT);
+	WRITE_SHORT(entindex() + 0x1000 * (FG_SHOULDER_LIGHT_ATTACHMENT + 1));
+	WRITE_VECTOR(vecLight);
+	WRITE_SHORT(nvg ? m_iNvgBeamSprite : m_iLightBeamSprite);
+	WRITE_BYTE(0);	// start frame
+	WRITE_BYTE(0);	// framerate
+	WRITE_BYTE(2);	// life * 10
+	WRITE_BYTE(beamWidth);
+	WRITE_BYTE(0);	// noise
+	WRITE_BYTE(nvg ? FG_NVG_FX_R : FG_FLASHLIGHT_FX_R);
+	WRITE_BYTE(nvg ? FG_NVG_FX_G : FG_FLASHLIGHT_FX_G);
+	WRITE_BYTE(nvg ? FG_NVG_FX_B : FG_FLASHLIGHT_FX_B);
+	WRITE_BYTE(FG_LIGHT_BEAM_BRIGHTNESS);
+	WRITE_BYTE(0);	// scroll speed
+	MESSAGE_END();
 
 	MESSAGE_BEGIN(MSG_PVS, SVC_TEMPENTITY, vecLight);
 	WRITE_BYTE(TE_DLIGHT);
 	WRITE_VECTOR(vecLight);
-	WRITE_BYTE((int)(FG_SHOULDER_LIGHT_RADIUS * 0.1f));	// radius / 10
+	WRITE_BYTE((int)((nvg ? FG_NVG_RADIUS : FG_SHOULDER_LIGHT_RADIUS) * 0.1f));	// radius / 10
 	WRITE_BYTE(nvg ? FG_NVG_R : FG_FLASHLIGHT_R);
 	WRITE_BYTE(nvg ? FG_NVG_G : FG_FLASHLIGHT_G);
 	WRITE_BYTE(nvg ? FG_NVG_B : FG_FLASHLIGHT_B);
@@ -2159,6 +2258,9 @@ void CHFGrunt::Precache()
 	RegisterAndPrecacheSoundScript(flashlightOffSoundScript);
 	RegisterAndPrecacheSoundScript(nvgOnSoundScript);
 	RegisterAndPrecacheSoundScript(nvgOffSoundScript);
+	PRECACHE_MODEL(FG_LIGHT_GLOW_SPRITE);
+	m_iLightBeamSprite = PRECACHE_MODEL(FG_FLASHLIGHT_BEAM_SPRITE);
+	m_iNvgBeamSprite = PRECACHE_MODEL(FG_NVG_BEAM_SPRITE);
 
 	RegisterAndPrecacheSoundScript(reloadSoundScript, NPC::reloadSoundScript);
 	RegisterAndPrecacheSoundScript(burst9mmSoundScript, NPC::burst9mmSoundScript);
@@ -2271,6 +2373,7 @@ void CHFGrunt::AlertSound()
 
 void CHFGrunt::DeathSound()
 {
+	UTIL_RemoveAndClean(m_hLightGlow);
 	EmitSoundScriptTalk(dieSoundScript);
 }
 
